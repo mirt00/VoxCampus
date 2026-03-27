@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "build": "cd ../client && npm install && npm run build",
     "seed:categories": "node seeds/categories.seed.js",
     "seed:admin": "node seeds/createAdmin.js"
   },
