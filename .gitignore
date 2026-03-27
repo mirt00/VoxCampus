@@ -6,14 +6,12 @@ dist/
 # Python
 __pycache__/
 *.pyc
-*.pyo
 venv/
 .venv/
 algo-service/venv/
 
 # Logs
 *.log
-npm-debug.log*
 
 # OS
 .DS_Store
