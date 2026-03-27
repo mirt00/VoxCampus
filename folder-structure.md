@@ -2,7 +2,7 @@
 
 ## Root
 ```
-sujabpatika/
+VoxCampus/
 ├── client/                  # React + Vite frontend
 ├── server/                  # Node.js + Express backend
 ├── algo-service/            # Python FastAPI algorithm service
