@@ -2,21 +2,34 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCreatePost } from "../../hooks/usePosts";
+import { usePosts } from "../../hooks/usePosts";
 import { useAuth } from "../../hooks/useAuth";
 import DuplicateWarning from "../../components/DuplicateWarning";
 import Navbar from "../../components/Navbar";
 import Avatar from "../../components/Avatar";
+import PostCard from "../../components/PostCard";
 import api from "../../api/axiosInstance";
+
+const CATEGORIES = [
+  "Academic / Exam Issues",
+  "Facilities / Maintenance",
+  "Infrastructure / Burst Pipe",
+  "Safety / Emergency",
+  "Services / Admin",
+  "General Suggestion",
+];
 
 export default function SubmitPost() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { mutateAsync, isPending } = useCreatePost();
+  const { data: recentPosts = [] } = usePosts({ feed: "latest" });
   const [form, setForm] = useState({ title: "", body: "", category: "" });
   const [anonymous, setAnonymous] = useState(false);
   const [duplicate, setDuplicate] = useState(null);
   const [images, setImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files).slice(0, 3 - images.length);
@@ -31,8 +44,7 @@ export default function SubmitPost() {
           headers: { "Content-Type": "multipart/form-data" },
         });
         uploaded.push(data.url);
-      } catch (err) {
-        console.error("Upload error:", err.response?.data || err.message);
+      } catch {
         toast.error(`Failed to upload ${file.name}`);
       }
     }
@@ -40,23 +52,13 @@ export default function SubmitPost() {
     setUploadingImages(false);
   };
 
-  const CATEGORIES = [
-    "Academic / Exam Issues",
-    "Facilities / Maintenance",
-    "Infrastructure / Burst Pipe",
-    "Safety / Emergency",
-    "Services / Admin",
-    "General Suggestion",
-  ];
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // If not logged in, always anonymous. If logged in, respect toggle.
     const authorType = (!user || anonymous) ? "anonymous" : "registered";
     try {
       await mutateAsync({ ...form, authorType, attachments: images });
-      toast.success("Suggestion submitted!");
-      navigate("/");
+      setSubmitted(true);
+      setTimeout(() => navigate("/"), 2500);
     } catch (err) {
       if (err.response?.status === 409) {
         setDuplicate(err.response.data.existingPostId);
@@ -66,134 +68,162 @@ export default function SubmitPost() {
     }
   };
 
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary to-primary-light flex items-center justify-center px-4">
+        <div className="text-center text-white">
+          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">✅</div>
+          <h2 className="text-2xl font-bold mb-2">Suggestion Submitted!</h2>
+          <p className="text-blue-200 text-sm">Thank you for making our campus better.</p>
+          <p className="text-blue-300 text-xs mt-2">Redirecting to feed...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gray-50 py-10 px-4">
-        <div className="max-w-xl mx-auto">
-          <div className="bg-white rounded-xl shadow-md p-8">
-            <h1 className="text-2xl font-bold text-primary mb-1">Share a Suggestion</h1>
-            <p className="text-gray-500 text-sm mb-6">Help make our campus better. Your voice matters.</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile hero header */}
+      <div className="bg-gradient-to-r from-primary to-primary-light px-4 pt-10 pb-16 text-white text-center">
+        <div className="text-4xl mb-2">🎓</div>
+        <h1 className="text-2xl font-bold">VoxCampus</h1>
+        <p className="text-blue-200 text-sm mt-1">Your voice shapes our campus</p>
+        {!user && (
+          <div className="flex gap-2 justify-center mt-4">
+            <Link to="/login" className="bg-white/20 text-white px-4 py-1.5 rounded-full text-sm hover:bg-white/30 transition-colors">
+              Login
+            </Link>
+            <Link to="/register" className="bg-accent text-white px-4 py-1.5 rounded-full text-sm hover:bg-yellow-600 transition-colors font-medium">
+              Sign up
+            </Link>
+          </div>
+        )}
+        {user && (
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <Avatar user={user} size="sm" />
+            <span className="text-blue-100 text-sm">Hi, {user.name}</span>
+          </div>
+        )}
+      </div>
 
-            {duplicate && (
-              <div className="mb-4">
-                <DuplicateWarning postId={duplicate} onDismiss={() => setDuplicate(null)} />
-              </div>
+      {/* Form card — overlaps hero */}
+      <div className="px-4 -mt-8 pb-6">
+        <div className="bg-white rounded-2xl shadow-lg p-5">
+          <h2 className="text-lg font-bold text-primary mb-1">Share a Suggestion</h2>
+          <p className="text-gray-400 text-xs mb-4">Help make our campus better.</p>
+
+          {duplicate && (
+            <div className="mb-4">
+              <DuplicateWarning postId={duplicate} onDismiss={() => setDuplicate(null)} />
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <input type="text" required maxLength={150} placeholder="Title of your suggestion"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-gray-50"
+                value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <textarea required rows={3} placeholder="Describe your suggestion..."
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none bg-gray-50"
+                value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <select required
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-gray-50"
+                value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                <option value="">Select category</option>
+                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {/* Image upload */}
+            <div>
+              <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-3 cursor-pointer transition-colors ${uploadingImages ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary"}`}>
+                <span className="text-xl">{uploadingImages ? "⏳" : "📷"}</span>
+                <span className="text-sm text-gray-400">{uploadingImages ? "Uploading..." : "Add photos (optional)"}</span>
+                <input type="file" accept="image/*" multiple className="hidden"
+                  onChange={handleImageChange} disabled={uploadingImages || images.length >= 3} />
+              </label>
+              {images.length > 0 && (
+                <div className="flex gap-2 mt-2">
+                  {images.map((src, i) => (
+                    <div key={i} className="relative">
+                      <img src={src} alt="" className="w-16 h-16 object-cover rounded-lg border" />
+                      <button type="button" onClick={() => setImages(images.filter((_, j) => j !== i))}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Identity toggle */}
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs font-medium text-gray-500 mb-2">POST AS</p>
+              {user ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setAnonymous(false)}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-colors ${!anonymous ? "border-primary bg-primary/5" : "border-gray-200"}`}>
+                    <Avatar user={user} size="sm" />
+                    <div className="text-left min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 truncate">{user.name}</p>
+                      <p className="text-xs text-gray-400">Named</p>
+                    </div>
+                    {!anonymous && <span className="ml-auto text-primary text-sm">✓</span>}
+                  </button>
+                  <button type="button" onClick={() => setAnonymous(true)}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border-2 transition-colors ${anonymous ? "border-primary bg-primary/5" : "border-gray-200"}`}>
+                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-sm flex-shrink-0">👤</div>
+                    <div className="text-left">
+                      <p className="text-xs font-semibold text-gray-800">Anonymous</p>
+                      <p className="text-xs text-gray-400">Hidden</p>
+                    </div>
+                    {anonymous && <span className="ml-auto text-primary text-sm">✓</span>}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">👤</div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700">Posting anonymously</p>
+                    <p className="text-xs text-gray-400">
+                      <Link to="/login" className="text-primary">Login</Link> or{" "}
+                      <Link to="/register" className="text-primary">sign up</Link> to use your name
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" disabled={isPending || uploadingImages}
+              className="w-full bg-primary text-white py-3.5 rounded-xl font-bold text-sm disabled:opacity-60 transition-colors active:scale-95">
+              {uploadingImages ? "Uploading..." : isPending ? "Submitting..." : "🚀 Submit Suggestion"}
+            </button>
+          </form>
+        </div>
+
+        {/* Recent posts section */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-700">Recent Suggestions</h3>
+            <Link to="/" className="text-xs text-primary hover:underline">View all →</Link>
+          </div>
+          <div className="space-y-3">
+            {recentPosts.slice(0, 3).map((post) => (
+              <PostCard key={post._id} post={post} />
+            ))}
+            {recentPosts.length === 0 && (
+              <p className="text-center text-gray-400 text-sm py-4">No suggestions yet. Be the first!</p>
             )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input type="text" required maxLength={150} placeholder="Brief title of your suggestion"
-                  className="w-full border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                  value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea required rows={4} placeholder="Describe your suggestion in detail..."
-                  className="w-full border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
-                  value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })}
-                />
-              </div>
-
-              {/* Image upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Attach Images <span className="text-gray-400 font-normal">(optional, max 3)</span>
-                </label>
-                <label className={`flex items-center gap-3 border-2 border-dashed rounded-lg px-4 py-3 cursor-pointer transition-colors ${uploadingImages ? "border-primary bg-primary/5 cursor-wait" : "border-gray-200 hover:border-primary"}`}>
-                  <span className="text-2xl">{uploadingImages ? "⏳" : "📎"}</span>
-                  <span className="text-sm text-gray-500">
-                    {uploadingImages ? "Uploading..." : "Click to upload images"}
-                  </span>
-                  <input type="file" accept="image/*" multiple className="hidden"
-                    onChange={handleImageChange} disabled={uploadingImages || images.length >= 3} />
-                </label>
-                {images.length > 0 && (
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {images.map((src, i) => (
-                      <div key={i} className="relative">
-                        <img src={src} alt="" className="w-20 h-20 object-cover rounded-lg border" />
-                        <button type="button" onClick={() => setImages(images.filter((_, j) => j !== i))}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>                <select required
-                  className="w-full border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                  value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  <option value="">Select a category</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              {/* Identity toggle */}
-              <div className="border rounded-xl p-4 bg-gray-50">
-                <p className="text-sm font-medium text-gray-700 mb-3">Post as</p>
-                {user ? (
-                  <div className="flex gap-3">
-                    {/* Named */}
-                    <button type="button"
-                      onClick={() => setAnonymous(false)}
-                      className={`flex-1 flex items-center gap-3 p-3 rounded-lg border-2 transition-colors text-left ${
-                        !anonymous ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-300"
-                      }`}>
-                      <Avatar user={user} size="md" />
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">{user.name}</p>
-                        <p className="text-xs text-gray-400">Your name is visible</p>
-                      </div>
-                      {!anonymous && <span className="ml-auto text-primary text-lg">✓</span>}
-                    </button>
-
-                    {/* Anonymous */}
-                    <button type="button"
-                      onClick={() => setAnonymous(true)}
-                      className={`flex-1 flex items-center gap-3 p-3 rounded-lg border-2 transition-colors text-left ${
-                        anonymous ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-300"
-                      }`}>
-                      <div className="w-9 h-9 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center flex-shrink-0 text-lg">
-                        👤
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Anonymous</p>
-                        <p className="text-xs text-gray-400">Your identity is hidden</p>
-                      </div>
-                      {anonymous && <span className="ml-auto text-primary text-lg">✓</span>}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-100 border border-gray-200">
-                    <div className="w-9 h-9 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-lg">
-                      👤
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-700">Posting anonymously</p>
-                      <p className="text-xs text-gray-400">
-                        <Link to="/login" className="text-primary hover:underline">Login</Link> or{" "}
-                        <Link to="/register" className="text-primary hover:underline">sign up</Link> to post with your name
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <button type="submit" disabled={isPending || uploadingImages}
-                className="w-full bg-primary text-white py-2.5 rounded-lg hover:bg-primary-light transition-colors font-semibold disabled:opacity-60">
-                {uploadingImages ? "Uploading images..." : isPending ? "Submitting..." : "Submit Suggestion"}
-              </button>
-            </form>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
