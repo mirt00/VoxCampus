@@ -10,6 +10,6 @@ const voteSchema = new mongoose.Schema(
 );
 
 voteSchema.index({ postId: 1, userId: 1 }, { unique: true, sparse: true });
-voteSchema.index({ postId: 1, ipHash: 1 }, { unique: true, sparse: true });
+voteSchema.index({ postId: 1, ipHash: 1 }, { unique: true, sparse: true, partialFilterExpression: { ipHash: { $type: "string" } } });
 
 module.exports = mongoose.model("Vote", voteSchema);
