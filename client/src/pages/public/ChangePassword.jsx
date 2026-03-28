@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { changePasswordApi } from "../../api/auth.api";
 import Navbar from "../../components/Navbar";
 import toast from "react-hot-toast";
@@ -36,6 +36,9 @@ export default function ChangePassword() {
       <Navbar />
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-md">
+          <Link to="/profile" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
+            ← Back to Profile
+          </Link>
           <h1 className="text-xl font-bold text-primary mb-1">Change Password</h1>
           <p className="text-gray-500 text-sm mb-6">Enter your current password then set a new one.</p>
 
