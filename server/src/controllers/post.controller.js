@@ -20,14 +20,18 @@ const createPost = async (req, res, next) => {
       // algo-service unavailable — skip duplicate check and proceed
     }
 
-    // Find or create category by name
-    let categoryDoc = await Category.findOne({ name: category });
-    if (!categoryDoc) {
-      categoryDoc = await Category.create({
-        name: category,
-        slug: category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-        weight: 1.0,
-      });
+    // Find or create category by name (skip if empty)
+    let categoryId = null;
+    if (category) {
+      let categoryDoc = await Category.findOne({ name: category });
+      if (!categoryDoc) {
+        categoryDoc = await Category.create({
+          name: category,
+          slug: category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          weight: 1.0,
+        });
+      }
+      categoryId = categoryDoc._id;
     }
 
     // Resolve display name and avatar from DB for registered posts
@@ -47,7 +51,7 @@ const createPost = async (req, res, next) => {
       ipHash: authorType === "anonymous" ? hashIP(req.ip) : null,
     };
 
-    const post = await Post.create({ title, body, category: categoryDoc._id, author, attachments: attachments || [] });
+    const post = await Post.create({ title, body, category: categoryId, author, attachments: attachments || [] });
     res.status(201).json(post);
   } catch (err) { next(err); }
 };

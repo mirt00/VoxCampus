@@ -4,7 +4,7 @@ const postSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, maxlength: 150 },
     body: { type: String, required: true, maxlength: 2000 },
-    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
 
     author: {
       type: { type: String, enum: ["registered", "anonymous"], required: true },
