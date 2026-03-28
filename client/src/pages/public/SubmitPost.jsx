@@ -168,7 +168,7 @@ export default function SubmitPost() {
 
             <div>
               <select required
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-gray-50"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-gray-50 cursor-pointer"
                 value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                 <option value="">Select category</option>
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
