@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { createPost, getPosts, getPostById } = require("../controllers/post.controller");
+const { createPost, getPosts, getPostById, updatePost, deletePost } = require("../controllers/post.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const validate = require("../middleware/validate");
 const { postLimiter } = require("../middleware/rateLimiter");
@@ -18,5 +18,7 @@ const optionalAuth = (req, res, next) => {
 router.get("/", getPosts);
 router.get("/:id", getPostById);
 router.post("/", postLimiter, optionalAuth, validate(createPostSchema), createPost);
+router.patch("/:id", verifyJWT, updatePost);
+router.delete("/:id", verifyJWT, deletePost);
 
 module.exports = router;

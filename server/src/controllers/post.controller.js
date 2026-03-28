@@ -16,9 +16,7 @@ const createPost = async (req, res, next) => {
       if (dupResult.is_duplicate) {
         return res.status(409).json({ message: "Similar post exists", existingPostId: dupResult.matched_post_id });
       }
-    } catch {
-      // algo-service unavailable — skip duplicate check and proceed
-    }
+    } catch { /* algo-service unavailable */ }
 
     // Find or create category by name (skip if empty)
     let categoryId = null;
@@ -34,7 +32,7 @@ const createPost = async (req, res, next) => {
       categoryId = categoryDoc._id;
     }
 
-    // Resolve display name and avatar from DB for registered posts
+    // Resolve display name and avatar
     let displayName = "Anonymous";
     let authorAvatar = null;
     if (authorType === "registered" && req.user?.id) {
@@ -77,7 +75,6 @@ const getPosts = async (req, res, next) => {
             const score = await rankPost(p.voteCount, ageHours);
             return { ...p, tdeScore: score };
           } catch {
-            // algo-service unavailable — fall back to vote count
             return { ...p, tdeScore: p.voteCount };
           }
         })
@@ -103,4 +100,48 @@ const getPostById = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { createPost, getPosts, getPostById };
+const updatePost = async (req, res, next) => {
+  try {
+    const { title, body, category } = req.body;
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    if (post.author?.userId?.toString() !== req.user?.id) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (title) post.title = title;
+    if (body) post.body = body;
+    if (category) {
+      let categoryDoc = await Category.findOne({ name: category });
+      if (!categoryDoc) {
+        categoryDoc = await Category.create({
+          name: category,
+          slug: category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          weight: 1.0,
+        });
+      }
+      post.category = categoryDoc._id;
+    }
+    await post.save();
+    res.json(post);
+  } catch (err) { next(err); }
+};
+
+const deletePost = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const isAuthor = post.author?.userId?.toString() === req.user?.id;
+    const isAdmin = ["admin", "superadmin"].includes(req.user?.role);
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    await Post.findByIdAndDelete(req.params.id);
+    res.json({ message: "Post deleted" });
+  } catch (err) { next(err); }
+};
+
+module.exports = { createPost, getPosts, getPostById, updatePost, deletePost };
