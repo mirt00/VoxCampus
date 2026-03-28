@@ -2,10 +2,14 @@ import { Link } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
 import VoteButton from "./VoteButton";
 import Avatar from "./Avatar";
+import PostMenu from "./PostMenu";
 import { timeAgo } from "../utils/timeAgo";
+import { useAuth } from "../hooks/useAuth";
 
 export default function PostCard({ post }) {
+  const { user } = useAuth();
   const isAnon = post.author?.type === "anonymous";
+  const isOwner = user && post.author?.userId === user.id;
 
   const anonUser = { name: "Anonymous", avatar: null };
   const displayUser = isAnon
@@ -43,6 +47,9 @@ export default function PostCard({ post }) {
             )}
           </div>
         </div>
+        {isOwner && (
+          <PostMenu postId={post._id} onEdit={() => window.location.href = `/post/${post._id}`} />
+        )}
       </div>
 
       {/* Title + body */}

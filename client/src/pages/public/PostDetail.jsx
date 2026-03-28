@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { usePost } from "../../hooks/usePosts";
-import { updatePost, deletePost } from "../../api/posts.api";
+import { updatePost } from "../../api/posts.api";
 import { useQueryClient } from "@tanstack/react-query";
 import StatusBadge from "../../components/StatusBadge";
 import VoteButton from "../../components/VoteButton";
 import Avatar from "../../components/Avatar";
+import PostMenu from "../../components/PostMenu";
 import Navbar from "../../components/Navbar";
 import { timeAgo } from "../../utils/timeAgo";
 import { useAuth } from "../../hooks/useAuth";
@@ -104,18 +105,9 @@ export default function PostDetail() {
                 </div>
               </div>
 
-              {/* Edit/Delete menu for owner */}
+              {/* Three dot menu for owner */}
               {isOwner && !editing && (
-                <div className="flex gap-2 ml-auto">
-                  <button onClick={startEdit}
-                    className="text-xs text-primary border border-primary px-3 py-1 rounded-lg hover:bg-primary/5 transition-colors">
-                    Edit
-                  </button>
-                  <button onClick={() => setShowDeleteConfirm(true)}
-                    className="text-xs text-red-500 border border-red-300 px-3 py-1 rounded-lg hover:bg-red-50 transition-colors">
-                    Delete
-                  </button>
-                </div>
+                <PostMenu postId={post._id} onEdit={startEdit} />
               )}
             </div>
 
@@ -164,25 +156,7 @@ export default function PostDetail() {
             )}
           </div>
 
-          {/* Delete confirmation */}
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-              <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-                <h3 className="font-bold text-gray-800 mb-2">Delete this post?</h3>
-                <p className="text-sm text-gray-500 mb-4">This action cannot be undone.</p>
-                <div className="flex gap-3">
-                  <button onClick={handleDelete}
-                    className="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-red-600">
-                    Delete
-                  </button>
-                  <button onClick={() => setShowDeleteConfirm(false)}
-                    className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Delete confirmation handled by PostMenu */}
         </div>
       </div>
     </>
