@@ -58,7 +58,6 @@ export default function SubmitPost() {
     try {
       await mutateAsync({ ...form, authorType, attachments: images });
       setSubmitted(true);
-      setTimeout(() => navigate("/"), 2500);
     } catch (err) {
       if (err.response?.status === 409) {
         setDuplicate(err.response.data.existingPostId);
@@ -70,12 +69,46 @@ export default function SubmitPost() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary to-primary-light flex items-center justify-center px-4">
-        <div className="text-center text-white">
-          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">✅</div>
-          <h2 className="text-2xl font-bold mb-2">Suggestion Submitted!</h2>
-          <p className="text-blue-200 text-sm">Thank you for making our campus better.</p>
-          <p className="text-blue-300 text-xs mt-2">Redirecting to feed...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-primary to-primary-light px-4 pt-10 pb-16 text-white text-center">
+          <div className="text-4xl mb-2">🎓</div>
+          <h1 className="text-2xl font-bold">VoxCampus</h1>
+        </div>
+        <div className="px-4 -mt-8 pb-6">
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✅</div>
+            <h2 className="text-xl font-bold text-gray-800 mb-1">Posted!</h2>
+            <p className="text-gray-400 text-sm mb-6">Your suggestion has been shared with the campus.</p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setForm({ title: "", body: "", category: "" });
+                  setImages([]);
+                  setAnonymous(false);
+                }}
+                className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform">
+                + Post Another Suggestion
+              </button>
+              <button onClick={() => navigate("/")}
+                className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl text-sm hover:bg-gray-50">
+                View Feed
+              </button>
+            </div>
+          </div>
+
+          {/* Recent posts below */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-gray-700">Recent Suggestions</h3>
+              <button onClick={() => navigate("/")} className="text-xs text-primary hover:underline">View all →</button>
+            </div>
+            <div className="space-y-3">
+              {recentPosts.slice(0, 3).map((post) => (
+                <PostCard key={post._id} post={post} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -203,7 +236,7 @@ export default function SubmitPost() {
 
             <button type="submit" disabled={isPending || uploadingImages}
               className="w-full bg-primary text-white py-3.5 rounded-xl font-bold text-sm disabled:opacity-60 transition-colors active:scale-95">
-              {uploadingImages ? "Uploading..." : isPending ? "Submitting..." : "🚀 Submit Suggestion"}
+              {uploadingImages ? "Uploading..." : isPending ? "Posting..." : "📢 Post Suggestion"}
             </button>
           </form>
         </div>
