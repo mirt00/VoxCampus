@@ -4,19 +4,37 @@ import toast from "react-hot-toast";
 
 export default function VoteButton({ postId, voteCount }) {
   const { mutate, isPending } = useVote();
+  const [localCount, setLocalCount] = useState(voteCount);
   const [voted, setVoted] = useState(
     () => JSON.parse(localStorage.getItem("votes") || "{}")[postId] || false
   );
 
   const handleVote = () => {
+    // Optimistic update
+    const newVoted = !voted;
+    const newCount = newVoted ? localCount + 1 : localCount - 1;
+    setVoted(newVoted);
+    setLocalCount(newCount);
+
+    // Persist voted state
+    const votes = JSON.parse(localStorage.getItem("votes") || "{}");
+    votes[postId] = newVoted;
+    localStorage.setItem("votes", JSON.stringify(votes));
+
     mutate(postId, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        setLocalCount(data.data.voteCount);
+        setVoted(data.data.voted);
         const votes = JSON.parse(localStorage.getItem("votes") || "{}");
-        votes[postId] = !voted;
+        votes[postId] = data.data.voted;
         localStorage.setItem("votes", JSON.stringify(votes));
-        setVoted(!voted);
       },
-      onError: (err) => toast.error(err.response?.data?.message || "Could not vote"),
+      onError: () => {
+        // Revert on error
+        setVoted(voted);
+        setLocalCount(voteCount);
+        toast.error("Could not vote");
+      },
     });
   };
 
@@ -35,7 +53,7 @@ export default function VoteButton({ postId, voteCount }) {
       </svg>
       <span>{voted ? "Voted" : "Upvote"}</span>
       <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${voted ? "bg-white/20" : "bg-gray-100"}`}>
-        {voteCount}
+        {localCount}
       </span>
     </button>
   );

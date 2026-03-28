@@ -14,7 +14,7 @@ const postSchema = new mongoose.Schema(
       ipHash: String,
     },
 
-    voteCount: { type: Number, default: 1 },
+    voteCount: { type: Number, default: 0 },
     tdeScore: { type: Number, default: 0 },
 
     status: {
