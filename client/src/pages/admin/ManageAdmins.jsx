@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAdmins, createAdmin, deactivateAdmin } from "../../api/admin.api";
 import AdminNavbar from "../../components/AdminNavbar";
@@ -26,7 +27,12 @@ export default function ManageAdmins() {
       <AdminNavbar />
       <div className="min-h-screen bg-gray-50 py-8 px-4">
         <div className="max-w-3xl mx-auto space-y-6">
-          <h1 className="text-2xl font-bold text-primary">Manage Admins</h1>
+          <div className="flex items-center gap-3">
+            <Link to="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors">
+              ← Back
+            </Link>
+            <h1 className="text-2xl font-bold text-primary">Manage Admins</h1>
+          </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="font-semibold text-gray-700 mb-4">Create Admin</h2>

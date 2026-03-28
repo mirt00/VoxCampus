@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { changePasswordApi } from "../../api/auth.api";
 import AdminNavbar from "../../components/AdminNavbar";
 import toast from "react-hot-toast";
@@ -20,8 +21,11 @@ export default function ChangePassword() {
   return (
     <>
       <AdminNavbar />
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+          <Link to="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-5 transition-colors">
+            ← Back to Dashboard
+          </Link>
           <h1 className="text-2xl font-bold text-primary mb-6">Change Password</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input type="password" placeholder="Current password" required
