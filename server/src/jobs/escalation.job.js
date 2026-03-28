@@ -12,9 +12,23 @@ const startEscalationJob = () => {
 
       for (const post of posts) {
         const categoryWeight = post.category?.weight || 1.0;
-        const result = await checkEscalation(post.createdAt, categoryWeight);
 
-        if (result.should_escalate) {
+        // Try algo-service, fall back to local calculation if it's down
+        let shouldEscalate = false;
+        let deadlineHours = 48 * categoryWeight;
+        let hoursElapsed = (Date.now() - new Date(post.createdAt).getTime()) / 3600000;
+
+        try {
+          const result = await checkEscalation(post.createdAt, categoryWeight);
+          shouldEscalate = result.should_escalate;
+          deadlineHours = result.deadline_hours;
+          hoursElapsed = result.hours_elapsed;
+        } catch {
+          // algo-service unavailable — use local fallback
+          shouldEscalate = hoursElapsed >= deadlineHours;
+        }
+
+        if (shouldEscalate) {
           post.isEscalated = true;
           post.escalatedAt = new Date();
           post.escalatedTo = "Campus Administration";
@@ -25,7 +39,7 @@ const startEscalationJob = () => {
             triggeredAt: new Date(),
             escalatedTo: "Campus Administration",
             previousStatus: post.status,
-            reason: `Exceeded ${result.deadline_hours}h threshold (${result.hours_elapsed.toFixed(1)}h elapsed)`,
+            reason: `Exceeded ${deadlineHours}h threshold (${hoursElapsed.toFixed(1)}h elapsed)`,
             notificationSent: false,
           });
 
@@ -36,7 +50,7 @@ const startEscalationJob = () => {
             console.error("[Escalation Job] Email failed:", mailErr.message);
           }
 
-          console.log(`[Escalation Job] Escalated post: ${post.title}`);
+          console.log(`[Escalation Job] Escalated: ${post.title}`);
         }
       }
     } catch (err) {

@@ -6,4 +6,5 @@ def compute_tde_rank(votes: int, age_hours: float, gravity: float = 1.8) -> floa
     """
     if age_hours < 0:
         age_hours = 0
-    return (votes - 1) / ((age_hours + 2) ** gravity)
+    votes_adjusted = max(votes, 0)
+    return votes_adjusted / ((age_hours + 2) ** gravity)
