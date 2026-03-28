@@ -37,7 +37,7 @@ export default function PostDetail() {
     ? { name: "Anonymous", avatar: null }
     : { name: post.author?.displayName || "User", avatar: post.author?.avatar || null };
 
-  const isOwner = user && post.author?.userId === user.id;
+  const isOwner = user && String(post.author?.userId) === String(user.id || user._id);
 
   const startEdit = () => {
     setForm({ title: post.title, body: post.body, category: post.category?.name || "" });

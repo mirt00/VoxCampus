@@ -10,7 +10,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     getMeApi()
-      .then((r) => setUser(r.data))
+      .then((r) => {
+        const u = r.data;
+        // normalize _id to id
+        setUser({ ...u, id: u._id || u.id });
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);

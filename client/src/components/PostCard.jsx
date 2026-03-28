@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 export default function PostCard({ post }) {
   const { user } = useAuth();
   const isAnon = post.author?.type === "anonymous";
-  const isOwner = user && post.author?.userId === user.id;
+  const isOwner = user && String(post.author?.userId) === String(user.id || user._id);
 
   const anonUser = { name: "Anonymous", avatar: null };
   const displayUser = isAnon
