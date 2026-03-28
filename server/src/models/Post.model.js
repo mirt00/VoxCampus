@@ -28,7 +28,8 @@ const postSchema = new mongoose.Schema(
     escalatedTo: String,
 
     assignedAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    adminNote: String,
+    adminNote: String,       // internal note (admin only)
+    adminFeedback: String,   // public response shown to all users
     attachments: [String], // base64 images or URLs
   },
   { timestamps: true }

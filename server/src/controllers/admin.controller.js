@@ -47,6 +47,14 @@ const saveNote = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const saveFeedback = async (req, res, next) => {
+  try {
+    const { feedback } = req.body;
+    const post = await Post.findByIdAndUpdate(req.params.id, { adminFeedback: feedback }, { new: true });
+    res.json(post);
+  } catch (err) { next(err); }
+};
+
 const getEscalationLog = async (req, res, next) => {
   try {
     const logs = await EscalationLog.find({ postId: req.params.id }).sort({ triggeredAt: -1 });
@@ -79,4 +87,4 @@ const deactivateAdmin = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getPosts, updateStatus, assignAdmin, saveNote, getEscalationLog, getAdmins, createAdmin, deactivateAdmin };
+module.exports = { getPosts, updateStatus, assignAdmin, saveNote, saveFeedback, getEscalationLog, getAdmins, createAdmin, deactivateAdmin };

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getEscalationLog, saveAdminNote, updatePostStatus } from "../../api/admin.api";
+import { getEscalationLog, saveAdminNote, updatePostStatus, saveAdminFeedback } from "../../api/admin.api";
 import { getPostById } from "../../api/posts.api";
 import AdminNavbar from "../../components/AdminNavbar";
 import StatusBadge from "../../components/StatusBadge";
@@ -14,6 +14,7 @@ export default function PostDetailAdmin() {
   const { id } = useParams();
   const qc = useQueryClient();
   const [note, setNote] = useState("");
+  const [feedback, setFeedback] = useState("");
 
   const { data: post } = useQuery({ queryKey: ["post", id], queryFn: () => getPostById(id).then((r) => r.data) });
   const { data: logs = [] } = useQuery({ queryKey: ["escalationLog", id], queryFn: () => getEscalationLog(id).then((r) => r.data) });
@@ -21,6 +22,11 @@ export default function PostDetailAdmin() {
   const { mutate: submitNote } = useMutation({
     mutationFn: () => saveAdminNote(id, note),
     onSuccess: () => { toast.success("Note saved"); qc.invalidateQueries({ queryKey: ["post", id] }); },
+  });
+
+  const { mutate: submitFeedback } = useMutation({
+    mutationFn: () => saveAdminFeedback(id, feedback),
+    onSuccess: () => { toast.success("Feedback published"); qc.invalidateQueries({ queryKey: ["post", id] }); },
   });
 
   const { mutate: changeStatus } = useMutation({
@@ -97,9 +103,36 @@ export default function PostDetailAdmin() {
             )}
           </div>
 
-          {/* Admin note */}
+          {/* Public feedback */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">📢</span>
+              <h2 className="font-semibold text-gray-700">Public Admin Response</h2>
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Visible to all users</span>
+            </div>
+            {post.adminFeedback && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3 text-sm text-gray-700">
+                <p className="font-medium text-primary text-xs mb-1">Current response:</p>
+                {post.adminFeedback}
+              </div>
+            )}
+            <textarea rows={3} placeholder="Write a public response to this suggestion... (visible to all users)"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              defaultValue={post.adminFeedback} onChange={(e) => setFeedback(e.target.value)}
+            />
+            <button onClick={() => submitFeedback()}
+              className="mt-2 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-light font-medium">
+              Publish Response
+            </button>
+          </div>
+
+          {/* Internal note */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="font-semibold text-gray-700 mb-3">Admin Note</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🔒</span>
+              <h2 className="font-semibold text-gray-700">Internal Note</h2>
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Admin only</span>
+            </div>
             <textarea rows={3} placeholder="Add an internal note..."
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               defaultValue={post.adminNote} onChange={(e) => setNote(e.target.value)}

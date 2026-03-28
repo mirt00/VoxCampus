@@ -152,6 +152,22 @@ export default function PostDetail() {
                 <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-50">
                   <VoteButton postId={post._id} voteCount={post.voteCount} />
                 </div>
+
+                {/* Admin public response */}
+                {post.adminFeedback && (
+                  <div className="mt-4 bg-primary/5 border border-primary/20 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        A
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-primary">Campus Administration</p>
+                        <p className="text-xs text-gray-400">Official Response</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 leading-relaxed">{post.adminFeedback}</p>
+                  </div>
+                )}
               </>
             )}
           </div>
