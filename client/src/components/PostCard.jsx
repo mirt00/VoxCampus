@@ -76,13 +76,46 @@ export default function PostCard({ post }) {
         </p>
       </Link>
 
-      {/* Row 4 — Image previews */}
+      {/* Image previews — responsive grid */}
       {post.attachments?.length > 0 && (
-        <div className="flex gap-2 mb-3">
-          {post.attachments.slice(0, 3).map((src, i) => (
-            <img key={i} src={src} alt=""
-              className="w-20 h-20 object-cover rounded-xl border border-gray-100 hover:scale-105 transition-transform duration-200" />
+        <div className={`mt-3 mb-3 gap-2 ${
+          post.attachments.length === 1 ? "block" :
+          post.attachments.length === 2 ? "grid grid-cols-2" :
+          "grid grid-cols-2"
+        }`}>
+          {post.attachments.length === 1 && (
+            <a href={post.attachments[0]} target="_blank" rel="noreferrer">
+              <img src={post.attachments[0]} alt=""
+                className="w-full max-h-64 object-cover rounded-xl border border-gray-100 hover:opacity-95 transition-opacity" />
+            </a>
+          )}
+          {post.attachments.length === 2 && post.attachments.map((src, i) => (
+            <a key={i} href={src} target="_blank" rel="noreferrer">
+              <img src={src} alt=""
+                className="w-full h-40 object-cover rounded-xl border border-gray-100 hover:opacity-95 transition-opacity" />
+            </a>
           ))}
+          {post.attachments.length >= 3 && (
+            <>
+              <a href={post.attachments[0]} target="_blank" rel="noreferrer" className="col-span-2">
+                <img src={post.attachments[0]} alt=""
+                  className="w-full h-48 object-cover rounded-xl border border-gray-100 hover:opacity-95 transition-opacity" />
+              </a>
+              <a href={post.attachments[1]} target="_blank" rel="noreferrer">
+                <img src={post.attachments[1]} alt=""
+                  className="w-full h-28 object-cover rounded-xl border border-gray-100 hover:opacity-95 transition-opacity" />
+              </a>
+              <a href={post.attachments[2]} target="_blank" rel="noreferrer" className="relative">
+                <img src={post.attachments[2]} alt=""
+                  className="w-full h-28 object-cover rounded-xl border border-gray-100 hover:opacity-95 transition-opacity" />
+                {post.attachments.length > 3 && (
+                  <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">+{post.attachments.length - 3}</span>
+                  </div>
+                )}
+              </a>
+            </>
+          )}
         </div>
       )}
 

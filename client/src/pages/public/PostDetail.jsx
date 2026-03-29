@@ -146,12 +146,40 @@ export default function PostDetail() {
                 <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{post.body}</p>
 
                 {post.attachments?.length > 0 && (
-                  <div className="flex gap-2 mt-4 flex-wrap">
-                    {post.attachments.map((src, i) => (
+                  <div className={`mt-4 gap-2 ${
+                    post.attachments.length === 1 ? "block" : "grid grid-cols-2"
+                  }`}>
+                    {post.attachments.length === 1 && (
+                      <a href={post.attachments[0]} target="_blank" rel="noreferrer">
+                        <img src={post.attachments[0]} alt=""
+                          className="w-full max-h-80 object-cover rounded-xl border hover:opacity-95 transition-opacity" />
+                      </a>
+                    )}
+                    {post.attachments.length === 2 && post.attachments.map((src, i) => (
                       <a key={i} href={src} target="_blank" rel="noreferrer">
-                        <img src={src} alt="" className="w-28 h-28 sm:w-40 sm:h-40 object-cover rounded-xl border hover:opacity-90 transition-opacity" />
+                        <img src={src} alt=""
+                          className="w-full h-48 object-cover rounded-xl border hover:opacity-95 transition-opacity" />
                       </a>
                     ))}
+                    {post.attachments.length >= 3 && (
+                      <>
+                        <a href={post.attachments[0]} target="_blank" rel="noreferrer" className="col-span-2">
+                          <img src={post.attachments[0]} alt=""
+                            className="w-full h-56 object-cover rounded-xl border hover:opacity-95 transition-opacity" />
+                        </a>
+                        {post.attachments.slice(1, 3).map((src, i) => (
+                          <a key={i} href={src} target="_blank" rel="noreferrer" className="relative">
+                            <img src={src} alt=""
+                              className="w-full h-36 object-cover rounded-xl border hover:opacity-95 transition-opacity" />
+                            {i === 1 && post.attachments.length > 3 && (
+                              <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                                <span className="text-white font-bold text-xl">+{post.attachments.length - 3}</span>
+                              </div>
+                            )}
+                          </a>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
 
