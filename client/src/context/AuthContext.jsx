@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
     getMeApi()
       .then((r) => {
         const u = r.data;
-        // normalize _id to id
         setUser({ ...u, id: u._id || u.id });
       })
       .catch(() => setUser(null))
@@ -21,7 +20,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const { data } = await loginApi({ email, password });
-    setUser(data.user);
+    // normalize id
+    setUser({ ...data.user, id: data.user.id || data.user._id });
   };
 
   const logout = async () => {
@@ -29,8 +29,17 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Derived convenience fields
+  const userID = user?.id || user?._id || null;
+  const userName = user?.name || null;
+  const faculty = user?.faculty || null;
+  const userToken = !!user; // true if authenticated
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setUser }}>
+    <AuthContext.Provider value={{
+      user, loading, login, logout, setUser,
+      userID, userName, faculty, userToken,
+    }}>
       {children}
     </AuthContext.Provider>
   );

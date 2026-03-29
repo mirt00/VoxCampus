@@ -18,6 +18,31 @@ export const useCreatePost = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (postData) => createPost(postData),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["posts"] }),
+    // Optimistic update — add post to feed immediately
+    onMutate: async (newPost) => {
+      await qc.cancelQueries({ queryKey: ["posts"] });
+      const previous = qc.getQueriesData({ queryKey: ["posts"] });
+      qc.setQueriesData({ queryKey: ["posts"] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        const optimistic = {
+          _id: `temp-${Date.now()}`,
+          title: newPost.title,
+          body: newPost.body,
+          voteCount: 0,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          author: { type: newPost.authorType, displayName: "You" },
+          attachments: newPost.attachments || [],
+        };
+        return [optimistic, ...old];
+      });
+      return { previous };
+    },
+    onError: (err, _, context) => {
+      if (context?.previous) {
+        context.previous.forEach(([key, data]) => qc.setQueryData(key, data));
+      }
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["posts"] }),
   });
 };
