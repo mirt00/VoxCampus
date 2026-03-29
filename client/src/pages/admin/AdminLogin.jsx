@@ -95,7 +95,7 @@ export default function AdminLogin() {
 
         <p className="text-center text-xs text-gray-400 mt-6">
           Not an admin?{" "}
-          <Link to="/" className="text-primary hover:underline">Go to public site</Link>
+          
         </p>
       </div>
     </div>

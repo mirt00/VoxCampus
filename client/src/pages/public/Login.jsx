@@ -83,7 +83,7 @@ export default function Login() {
             <Link to="/register" className="text-primary font-medium hover:underline">Sign up</Link>
           </p>
           <p className="text-center text-sm text-gray-400 mt-2">
-            <Link to="/" className="hover:underline">← Back to feed</Link>
+            
           </p>
         </div>
       </div>
