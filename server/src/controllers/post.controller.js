@@ -52,7 +52,7 @@ const createPost = async (req, res, next) => {
 
     const author = {
       type: authorType,
-      userId: authorType === "registered" ? req.user?.id : null,
+      userId: req.user?.id || null, // always store userId for ownership checks
       displayName: authorType === "registered" ? displayName : "Anonymous",
       avatar: authorType === "registered" ? authorAvatar : null,
       ipHash: authorType === "anonymous" ? hashIP(req.ip) : null,
@@ -73,7 +73,38 @@ const getPosts = async (req, res, next) => {
     let posts = await Post.find(filter)
       .populate("category", "name slug")
       .populate("assignedAdmin", "name email")
+      .populate("author.userId", "name email faculty studentId avatar")
       .lean();
+
+    // Determine if requester is admin (via cookie JWT)
+    const jwt = require("jsonwebtoken");
+    let requesterId = null;
+    let requesterRole = "public";
+    try {
+      const token = req.cookies?.token;
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        requesterId = decoded.id;
+        requesterRole = decoded.role;
+      }
+    } catch {}
+
+    const isAdmin = ["admin", "superadmin"].includes(requesterRole);
+
+    posts = posts.map((p) => {
+      const isOwner = requesterId && String(p.author?.userId?._id || p.author?.userId) === String(requesterId);
+      return {
+        ...p,
+        isOwner,
+        // For anonymous posts: show real identity only to admin, hide from others
+        author: {
+          ...p.author,
+          realIdentity: isAdmin && p.author?.type === "anonymous" ? p.author?.userId : undefined,
+          // Keep userId for ownership check on frontend
+          userId: p.author?.userId?._id || p.author?.userId,
+        },
+      };
+    });
 
     if (feed === "trending") {
       const now = Date.now();
@@ -103,9 +134,35 @@ const getPostById = async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate("category", "name slug weight")
-      .populate("assignedAdmin", "name email");
+      .populate("assignedAdmin", "name email")
+      .populate("author.userId", "name email faculty studentId avatar")
+      .lean();
     if (!post) return res.status(404).json({ message: "Post not found" });
-    res.json(post);
+
+    const jwt = require("jsonwebtoken");
+    let requesterId = null;
+    let requesterRole = "public";
+    try {
+      const token = req.cookies?.token;
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        requesterId = decoded.id;
+        requesterRole = decoded.role;
+      }
+    } catch {}
+
+    const isAdmin = ["admin", "superadmin"].includes(requesterRole);
+    const isOwner = requesterId && String(post.author?.userId?._id || post.author?.userId) === String(requesterId);
+
+    res.json({
+      ...post,
+      isOwner,
+      author: {
+        ...post.author,
+        realIdentity: isAdmin && post.author?.type === "anonymous" ? post.author?.userId : undefined,
+        userId: post.author?.userId?._id || post.author?.userId,
+      },
+    });
   } catch (err) { next(err); }
 };
 

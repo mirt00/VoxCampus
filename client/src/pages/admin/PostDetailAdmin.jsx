@@ -68,8 +68,30 @@ export default function PostDetailAdmin() {
                 <p className="text-xs text-gray-400">{timeAgo(post.createdAt)}</p>
                 {isAnon && (
                   <span className="inline-block mt-1 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                    🔒 Identity hidden
+                    🔒 Identity hidden from public
                   </span>
+                )}
+                {/* Admin sees real identity of anonymous poster */}
+                {isAnon && post.author?.realIdentity && (
+                  <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <p className="text-xs font-bold text-amber-700 mb-1">🔍 Real Identity (Admin Only)</p>
+                    <div className="flex items-center gap-2">
+                      {post.author.realIdentity.avatar ? (
+                        <img src={post.author.realIdentity.avatar} className="w-7 h-7 rounded-full object-cover" alt="" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-xs font-bold">
+                          {post.author.realIdentity.name?.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">{post.author.realIdentity.name}</p>
+                        <p className="text-xs text-gray-500">{post.author.realIdentity.email}</p>
+                        {post.author.realIdentity.faculty && (
+                          <p className="text-xs text-gray-400">{post.author.realIdentity.faculty} · {post.author.realIdentity.studentId}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
               {/* Status changer */}

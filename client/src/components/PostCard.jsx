@@ -9,7 +9,9 @@ import { useAuth } from "../hooks/useAuth";
 export default function PostCard({ post }) {
   const { user } = useAuth();
   const isAnon = post.author?.type === "anonymous";
-  const isOwner = user && String(post.author?.userId) === String(user.id || user._id);
+  // Use server-provided isOwner flag, fallback to client check
+  const isOwner = post.isOwner || (user && String(post.author?.userId) === String(user.id || user._id));
+  const isMyAnonPost = isOwner && isAnon;
 
   const displayUser = isAnon
     ? { name: "Anonymous", avatar: null }
@@ -25,7 +27,7 @@ export default function PostCard({ post }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
           {isAnon ? (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-lg flex-shrink-0 shadow-sm">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 shadow-sm ${isMyAnonPost ? "bg-primary/20" : "bg-gradient-to-br from-gray-200 to-gray-300"}`}>
               👤
             </div>
           ) : (
@@ -33,7 +35,12 @@ export default function PostCard({ post }) {
           )}
           <div>
             <p className="text-sm font-bold text-gray-800 leading-tight">
-              {isAnon ? "Anonymous" : displayUser.name}
+              {isMyAnonPost ? (
+                <span className="flex items-center gap-1.5">
+                  <span>Anonymous</span>
+                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">You</span>
+                </span>
+              ) : isAnon ? "Anonymous" : displayUser.name}
             </p>
             <p className="text-xs text-gray-400">{timeAgo(post.createdAt)}</p>
           </div>

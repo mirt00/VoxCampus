@@ -37,7 +37,8 @@ export default function PostDetail() {
     ? { name: "Anonymous", avatar: null }
     : { name: post.author?.displayName || "User", avatar: post.author?.avatar || null };
 
-  const isOwner = user && String(post.author?.userId) === String(user.id || user._id);
+  const isOwner = post.isOwner || (user && String(post.author?.userId) === String(user.id || user._id));
+  const isMyAnonPost = isOwner && isAnon;
 
   const startEdit = () => {
     setForm({ title: post.title, body: post.body, category: post.category?.name || "" });
@@ -88,7 +89,12 @@ export default function PostDetail() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-gray-800">
-                    {isAnon ? "Anonymous" : displayUser.name}
+                    {isMyAnonPost ? (
+                      <span className="flex items-center gap-1.5">
+                        Anonymous
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">You</span>
+                      </span>
+                    ) : isAnon ? "Anonymous" : displayUser.name}
                   </span>
                   <span className="text-xs text-gray-400">{timeAgo(post.createdAt)}</span>
                 </div>
