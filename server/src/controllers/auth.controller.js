@@ -105,6 +105,14 @@ const updateAvatar = async (req, res, next) => {
       { avatar },
       { new: true }
     ).select("-passwordHash -resetToken -resetTokenExpiry");
+
+    // Sync to all posts by this user
+    const Post = require("../models/Post.model");
+    await Post.updateMany(
+      { "author.userId": req.user.id },
+      { $set: { "author.avatar": avatar || null } }
+    );
+
     res.json(user);
   } catch (err) { next(err); }
 };

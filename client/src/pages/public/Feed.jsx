@@ -145,11 +145,15 @@ export default function Feed() {
                   <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">
-                        {user.name?.charAt(0).toUpperCase()}
+                        {user.avatar ? (
+                          <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          user.name?.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 text-sm">{user.name}</p>
-                        <p className="text-xs text-gray-400">{user.faculty || user.role}</p>
+                        {user.faculty && <p className="text-xs text-gray-400">{user.faculty}</p>}
                       </div>
                     </div>
                   </div>

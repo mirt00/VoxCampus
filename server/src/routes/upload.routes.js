@@ -9,11 +9,21 @@ router.post("/avatar", verifyJWT, upload.single("avatar"), async (req, res, next
   try {
     if (!req.file) return res.status(400).json({ message: "No file provided" });
     const url = await uploadToCloudinary(req.file.buffer, "voxcampus/avatars");
+
+    // Update user avatar
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { avatar: url },
       { new: true }
     ).select("-passwordHash -resetToken -resetTokenExpiry");
+
+    // Sync avatar to all posts by this user
+    const Post = require("../models/Post.model");
+    await Post.updateMany(
+      { "author.userId": req.user.id },
+      { $set: { "author.avatar": url } }
+    );
+
     res.json({ url, user });
   } catch (err) { next(err); }
 });
