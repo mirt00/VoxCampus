@@ -7,6 +7,15 @@ const hashIP = require("../utils/hashIP");
 const createPost = async (req, res, next) => {
   try {
     const { title, body, category, authorType, attachments } = req.body;
+    const trimmedTitle = title?.trim();
+    const trimmedBody = body?.trim();
+
+    if (!trimmedTitle || trimmedTitle.length < 3) {
+      return res.status(400).json({ message: "Title must be at least 3 characters" });
+    }
+    if (!trimmedBody || trimmedBody.length < 3) {
+      return res.status(400).json({ message: "Description must be at least 3 characters" });
+    }
 
     // Duplicate check — skip gracefully if algo-service is down
     try {
@@ -49,7 +58,7 @@ const createPost = async (req, res, next) => {
       ipHash: authorType === "anonymous" ? hashIP(req.ip) : null,
     };
 
-    const post = await Post.create({ title, body, category: categoryId, author, attachments: attachments || [] });
+    const post = await Post.create({ title: trimmedTitle, body: trimmedBody, category: categoryId, author, attachments: attachments || [] });
     res.status(201).json(post);
   } catch (err) { next(err); }
 };

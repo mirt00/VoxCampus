@@ -54,9 +54,21 @@ export default function SubmitPost() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const trimmedTitle = form.title.trim();
+    const trimmedBody = form.body.trim();
+
+    if (!trimmedTitle || trimmedTitle.length < 3) {
+      toast.error("Title must be at least 3 characters");
+      return;
+    }
+    if (!trimmedBody || trimmedBody.length < 3) {
+      toast.error("Description must be at least 3 characters");
+      return;
+    }
+
     const authorType = (!user || anonymous) ? "anonymous" : "registered";
     try {
-      await mutateAsync({ ...form, authorType, attachments: images });
+      await mutateAsync({ ...form, title: trimmedTitle, body: trimmedBody, authorType, attachments: images });
       setSubmitted(true);
     } catch (err) {
       if (err.response?.status === 409) {
