@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-
-export default function SearchBar({ onSearch }) {
-  const [value, setValue] = useState("");
+export default function SearchBar({ onSearch, defaultValue = "" }) {
+  const [value, setValue] = useState(defaultValue);
 
   useEffect(() => {
     const timer = setTimeout(() => onSearch(value), 400);

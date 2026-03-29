@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { usePosts } from "../../hooks/usePosts";
 import { useAuth } from "../../hooks/useAuth";
 import PostCard from "../../components/PostCard";
@@ -9,14 +9,7 @@ import CategoryFilter from "../../components/CategoryFilter";
 import Navbar from "../../components/Navbar";
 import PostSkeleton from "../../components/PostSkeleton";
 
-const STATUS_COLORS = {
-  pending: "bg-yellow-100 text-yellow-700",
-  "in-progress": "bg-blue-100 text-blue-700",
-  resolved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-};
-
-function StatsSidebar({ posts }) {
+function StatsSidebar({ posts, user }) {
   const total = posts.length;
   const resolved = posts.filter(p => p.status === "resolved").length;
   const inProgress = posts.filter(p => p.status === "in-progress").length;
@@ -29,13 +22,26 @@ function StatsSidebar({ posts }) {
     return acc;
   }, {});
 
-  const topCategories = Object.entries(categories)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
+  const topCategories = Object.entries(categories).sort((a, b) => b[1] - a[1]).slice(0, 4);
 
   return (
     <div className="space-y-4">
-      {/* Overview */}
+      {user && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">
+              {user.avatar
+                ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                : user.name?.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-semibold text-gray-800 text-sm">{user.name}</p>
+              {user.faculty && <p className="text-xs text-gray-400">{user.faculty}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide">Overview</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -53,7 +59,6 @@ function StatsSidebar({ posts }) {
         </div>
       </div>
 
-      {/* Status breakdown */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Status</h3>
         <div className="space-y-2">
@@ -75,7 +80,6 @@ function StatsSidebar({ posts }) {
         </div>
       </div>
 
-      {/* Top categories */}
       {topCategories.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <h3 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Top Categories</h3>
@@ -90,7 +94,6 @@ function StatsSidebar({ posts }) {
         </div>
       )}
 
-      {/* Quick action */}
       <Link to="/submit"
         className="block w-full bg-primary text-white text-center py-3 rounded-2xl font-bold text-sm hover:bg-primary-light transition-colors shadow-sm shadow-primary/30">
         + Share a Suggestion
@@ -100,29 +103,43 @@ function StatsSidebar({ posts }) {
 }
 
 export default function Feed() {
-  const [feed, setFeed] = useState("latest");
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
+  // Read state from URL
+  const feed = searchParams.get("feed") || "latest";
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
+
   const { data: posts = [], isLoading, isError } = usePosts({ feed, search, category });
+
+  const setParam = (key, value) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set(key, value);
+      else next.delete(key);
+      return next;
+    });
+  };
 
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-gray-50 py-6 px-4 pb-24">
         <div className="max-w-5xl mx-auto">
-          {/* Desktop: 2-col | Mobile: 1-col */}
           <div className="flex gap-6">
             {/* Main feed */}
             <div className="flex-1 min-w-0 space-y-4">
-              <FeedTabs active={feed} onChange={setFeed} />
-              <SearchBar onSearch={setSearch} />
-              <CategoryFilter active={category} onChange={setCategory} />
+              {/* URL: /?feed=trending */}
+              <FeedTabs active={feed} onChange={(val) => setParam("feed", val)} />
+              {/* URL: /?search=keyword */}
+              <SearchBar onSearch={(val) => setParam("search", val)} defaultValue={search} />
+              {/* URL: /?category=id */}
+              <CategoryFilter active={category} onChange={(val) => setParam("category", val)} />
 
               {isLoading && (
                 <div className="space-y-3">
-                  {[1,2,3].map((i) => <PostSkeleton key={i} />)}
+                  {[1,2,3].map(i => <PostSkeleton key={i} />)}
                 </div>
               )}
               {isError && <p className="text-center text-red-400 py-10">Failed to load posts.</p>}
@@ -134,38 +151,21 @@ export default function Feed() {
                 </div>
               )}
               <div className="space-y-3">
-                {posts.map((post) => <PostCard key={post._id} post={post} />)}
+                {posts.map(post => <PostCard key={post._id} post={post} />)}
               </div>
             </div>
 
             {/* Stats sidebar — desktop only */}
             <div className="hidden lg:block w-72 flex-shrink-0">
               <div className="sticky top-6">
-                {user && (
-                  <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">
-                        {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          user.name?.charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">{user.name}</p>
-                        {user.faculty && <p className="text-xs text-gray-400">{user.faculty}</p>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <StatsSidebar posts={posts} />
+                <StatsSidebar posts={posts} user={user} />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Floating + button for mobile */}
+      {/* Floating + button — mobile only */}
       <Link to="/submit"
         className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-primary-light transition-colors active:scale-95 z-50 print:hidden lg:hidden">
         +
