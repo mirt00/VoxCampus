@@ -1,12 +1,32 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export default function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
-  if (!user) return <Navigate to="/admin/login" replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/admin/dashboard" replace />;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center gap-3">
+        <svg className="animate-spin w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+        <p className="text-gray-400 text-sm">Loading...</p>
+      </div>
+    </div>
+  );
+
+  if (!user) {
+    // Admin routes → admin login, public routes → user login
+    const isAdminRoute = location.pathname.startsWith("/admin");
+    return <Navigate to={isAdminRoute ? "/admin/login" : "/login"} replace state={{ from: location.pathname }} />;
+  }
+
+  if (roles && !roles.includes(user.role)) {
+    // Admin trying to access user-only or vice versa
+    return <Navigate to={user.role === "user" ? "/" : "/admin/dashboard"} replace />;
+  }
 
   return children;
 }

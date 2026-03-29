@@ -27,14 +27,16 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public */}
-        <Route path="/" element={<Feed />} />
-        <Route path="/submit" element={<SubmitPost />} />
-        <Route path="/post/:id" element={<PostDetail />} />
+        {/* Public — require login */}
+        <Route path="/" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Feed /></ProtectedRoute>} />
+        <Route path="/submit" element={<ProtectedRoute roles={["user","admin","superadmin"]}><SubmitPost /></ProtectedRoute>} />
+        <Route path="/post/:id" element={<ProtectedRoute roles={["user","admin","superadmin"]}><PostDetail /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Profile /></ProtectedRoute>} />
+        <Route path="/change-password" element={<ProtectedRoute roles={["user","admin","superadmin"]}><ChangePassword /></ProtectedRoute>} />
+
+        {/* Auth — public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
