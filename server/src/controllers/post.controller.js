@@ -17,15 +17,30 @@ const createPost = async (req, res, next) => {
       return res.status(400).json({ message: "Description must be at least 3 characters" });
     }
 
-    // Duplicate check — skip gracefully if algo-service is down
+    // Duplicate check — try algo-service, fall back to local keyword similarity
     try {
       const existing = await Post.find({}, "title body _id").lean();
       const existingPosts = existing.map((p) => ({ id: p._id.toString(), title: p.title, body: p.body }));
-      const dupResult = await checkDuplicate(`${title} ${body}`, existingPosts);
+      const dupResult = await checkDuplicate(`${trimmedTitle} ${trimmedBody}`, existingPosts);
       if (dupResult.is_duplicate) {
         return res.status(409).json({ message: "Similar post exists", existingPostId: dupResult.matched_post_id });
       }
-    } catch { /* algo-service unavailable */ }
+    } catch {
+      // algo-service down — local Jaccard similarity fallback
+      const stopWords = new Set(["the","a","an","is","it","in","on","at","to","for","of","and","or","but","with","this","that","are","was","were","be","been","have","has","i","he","she","they","we","you"]);
+      const tokenize = (text) => text.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+      const newTokens = new Set(tokenize(`${trimmedTitle} ${trimmedBody}`));
+      const existing = await Post.find({}, "title body _id").lean();
+      for (const p of existing) {
+        const existingTokens = new Set(tokenize(`${p.title} ${p.body}`));
+        const intersection = [...newTokens].filter(w => existingTokens.has(w)).length;
+        const union = new Set([...newTokens, ...existingTokens]).size;
+        const jaccard = union > 0 ? intersection / union : 0;
+        if (jaccard >= 0.6) {
+          return res.status(409).json({ message: "Similar post exists", existingPostId: p._id.toString() });
+        }
+      }
+    }
 
     // Find or create category by name (skip if empty)
     let categoryId = null;
