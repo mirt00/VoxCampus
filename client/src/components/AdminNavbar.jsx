@@ -18,6 +18,7 @@ export default function AdminNavbar() {
         {user?.role === "superadmin" && (
           <Link to="/admin/manage-admins" className="hover:text-accent">Manage Admins</Link>
         )}
+        <Link to="/admin/reports" className="hover:text-accent">Reports</Link>
         <Link to="/admin/qr" className="hover:text-accent">QR Code</Link>
         <Link to="/admin/change-password" className="hover:text-accent">Password</Link>
         <span className="text-blue-200 text-xs">{user?.name}</span>

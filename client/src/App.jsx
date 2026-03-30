@@ -22,6 +22,7 @@ import PostDetailAdmin from "./pages/admin/PostDetailAdmin";
 import ManageAdmins from "./pages/admin/ManageAdmins";
 import AdminChangePassword from "./pages/admin/ChangePassword";
 import QRPage from "./pages/admin/QRPage";
+import Reports from "./pages/admin/Reports";
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/admin/manage-admins" element={<ProtectedRoute roles={["superadmin"]}><ManageAdmins /></ProtectedRoute>} />
         <Route path="/admin/change-password" element={<ProtectedRoute roles={["admin", "superadmin"]}><AdminChangePassword /></ProtectedRoute>} />
         <Route path="/admin/qr" element={<ProtectedRoute roles={["admin", "superadmin"]}><QRPage /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute roles={["admin", "superadmin"]}><Reports /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
