@@ -26,17 +26,31 @@ const createPost = async (req, res, next) => {
         return res.status(409).json({ message: "Similar post exists", existingPostId: dupResult.matched_post_id });
       }
     } catch {
-      // algo-service down — local Jaccard similarity fallback
-      const stopWords = new Set(["the","a","an","is","it","in","on","at","to","for","of","and","or","but","with","this","that","are","was","were","be","been","have","has","i","he","she","they","we","you"]);
-      const tokenize = (text) => text.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
-      const newTokens = new Set(tokenize(`${trimmedTitle} ${trimmedBody}`));
+      // algo-service down — compare title-to-title AND body-to-body separately using Jaccard
+      const stopWords = new Set(["the","a","an","is","it","in","on","at","to","for","of","and","or","but","with","this","that","are","was","were","be","been","have","has","i","he","she","they","we","you","go","do","did","get","got","can","will","would","could","should"]);
+      const tokenize = (text) => new Set(
+        text.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
+      );
+      const jaccard = (setA, setB) => {
+        if (setA.size === 0 && setB.size === 0) return 0;
+        const intersection = [...setA].filter(w => setB.has(w)).length;
+        const union = new Set([...setA, ...setB]).size;
+        return union > 0 ? intersection / union : 0;
+      };
+
+      const newTitleTokens = tokenize(trimmedTitle);
+      const newBodyTokens = tokenize(trimmedBody);
       const existing = await Post.find({}, "title body _id").lean();
+
       for (const p of existing) {
-        const existingTokens = new Set(tokenize(`${p.title} ${p.body}`));
-        const intersection = [...newTokens].filter(w => existingTokens.has(w)).length;
-        const union = new Set([...newTokens, ...existingTokens]).size;
-        const jaccard = union > 0 ? intersection / union : 0;
-        if (jaccard >= 0.6) {
+        const existingTitleTokens = tokenize(p.title || "");
+        const existingBodyTokens = tokenize(p.body || "");
+
+        const titleSim = jaccard(newTitleTokens, existingTitleTokens);
+        const bodySim = jaccard(newBodyTokens, existingBodyTokens);
+
+        // Block if title is very similar (≥0.7) OR both title+body are moderately similar
+        if (titleSim >= 0.7 || (titleSim >= 0.4 && bodySim >= 0.4)) {
           return res.status(409).json({ message: "Similar post exists", existingPostId: p._id.toString() });
         }
       }
