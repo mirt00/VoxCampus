@@ -5,6 +5,7 @@ const { checkEscalation } = require("../services/python.service");
 const { sendEscalationEmail } = require("../services/mail.service");
 
 const startEscalationJob = () => {
+  // Hourly escalation check
   cron.schedule("0 * * * *", async () => {
     console.log("[Escalation Job] Running...");
     try {
@@ -59,6 +60,17 @@ const startEscalationJob = () => {
   });
 
   console.log("[Escalation Job] Scheduled (hourly)");
+
+  // Keep algo-service alive — ping every 14 minutes to prevent Render free tier sleep
+  const axios = require("axios");
+  cron.schedule("*/14 * * * *", async () => {
+    try {
+      await axios.get(`${process.env.PYTHON_SERVICE_URL}/health`, { timeout: 5000 });
+      console.log("[Keep-Alive] Algo-service pinged successfully");
+    } catch {
+      console.log("[Keep-Alive] Algo-service is sleeping, ping sent to wake it");
+    }
+  });
 };
 
 module.exports = startEscalationJob;
