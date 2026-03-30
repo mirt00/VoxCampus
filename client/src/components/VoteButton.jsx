@@ -41,16 +41,32 @@ export default function VoteButton({ postId, voteCount }) {
     <button
       onClick={handleVote}
       disabled={isPending}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all duration-150 disabled:opacity-50 active:scale-95 ${
+      className={`group flex items-center gap-2 px-4 py-2 rounded-full border-2 text-sm font-semibold
+                  transition-all duration-200 disabled:opacity-50 active:scale-95 select-none ${
         voted
-          ? "bg-primary text-white shadow-sm shadow-primary/30"
-          : "bg-gray-100 text-gray-500 hover:bg-primary/10 hover:text-primary"
+          ? "border-primary bg-primary text-white shadow-md shadow-primary/25"
+          : "border-gray-200 bg-white text-gray-500 hover:border-primary hover:text-primary hover:bg-primary/5"
       }`}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+      {/* Arrow icon */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`w-4 h-4 transition-transform duration-200 ${voted ? "scale-110" : "group-hover:-translate-y-0.5"}`}
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
         <path d="M12 4l8 8H4l8-8z" />
       </svg>
-      <span>{localCount}</span>
+
+      {/* Label */}
+      <span>{voted ? "Upvoted" : "Upvote"}</span>
+
+      {/* Count badge */}
+      <span className={`min-w-[20px] text-center px-1.5 py-0.5 rounded-full text-xs font-bold transition-colors ${
+        voted ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600 group-hover:bg-primary/10 group-hover:text-primary"
+      }`}>
+        {localCount}
+      </span>
     </button>
   );
 }
