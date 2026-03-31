@@ -126,8 +126,44 @@ const createPost = async (req, res, next) => {
       toxicityScore = modResult.toxicity_score || 0.0;
       moderationReason = modResult.reason || null;
     } catch {
-      // Algo-service down — local checks already passed, allow through
       console.warn("[Moderation] Algo-service unreachable — local checks passed, post allowed");
+    }
+
+    // Layer 3 — Campus Relevance Check (always runs locally)
+    const CAMPUS_KEYWORDS = [
+      "library","canteen","hostel","wifi","internet","water","electricity","classroom",
+      "toilet","bathroom","road","parking","faculty","teacher","exam","result","fees",
+      "transport","bus","sports","playground","lab","computer","projector","ac","fan",
+      "light","bench","chair","campus","college","university","department","notice",
+      "gate","security","smoke","smoking","food","drink","class","student","staff",
+      "office","building","floor","room","corridor","staircase","lift","elevator",
+      "cafeteria","mess","dormitory","lecture","assignment","attendance","marks",
+      "principal","dean","administration","library","book","journal","research",
+      "wifi","network","electricity","power","water","pipe","leak","repair","clean",
+      "dirty","garbage","waste","noise","disturbance","safety","fire","emergency",
+      "medical","health","nurse","doctor","clinic","sports","ground","field","court",
+      "equipment","furniture","chair","table","board","projector","screen","ac",
+      "heater","fan","window","door","lock","key","parking","vehicle","bike","car",
+      "bus","van","driver","guard","watchman","cleaner","sweeper","maintenance",
+      "construction","renovation","paint","wall","roof","floor","toilet","washroom",
+      "bathroom","sink","tap","shower","electricity","bulb","tube","switch","socket",
+      "internet","wifi","broadband","connection","speed","slow","fast","network",
+      "fees","tuition","scholarship","stipend","allowance","payment","receipt",
+      "certificate","degree","diploma","transcript","marksheet","admit","card",
+      "registration","enrollment","admission","application","form","document",
+    ];
+
+    const totalLen = combined.length;
+    const campusHit = CAMPUS_KEYWORDS.some(kw => combined.includes(kw));
+
+    // Only block as irrelevant if: no campus keyword AND post is short (< 60 chars)
+    // Long posts get benefit of doubt — they may describe context before mentioning campus
+    if (!campusHit && totalLen < 60) {
+      return res.status(422).json({
+        success: false, blocked: true, layer: 3,
+        reason: "irrelevant", matched: null,
+        message: MODERATION_MESSAGES.irrelevant,
+      });
     }
     // ─────────────────────────────────────────────────────────────────
     let categoryId = null;
