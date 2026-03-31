@@ -68,12 +68,54 @@ const createPost = async (req, res, next) => {
       irrelevant: "Your post does not appear to be related to campus issues. Please describe a specific campus concern.",
     };
 
+    // Local blocklist — always runs regardless of algo-service status
+    const VULGAR_WORDS = [
+      "damn","crap","idiot","stupid","fool","dumb","loser","hate","kill","shut up",
+      "wtf","hell","bastard","fuck","bitch","shit","dick","pussy","cock",
+      "whore","slut","nigger","faggot","retard","cunt",
+      "muji","randi","kutta","sala","gadhaa","haramee","bakwaas","faltu","bevakuf","chutiya","bsdk","mck",
+    ];
+    const combined = `${trimmedTitle} ${trimmedBody}`.toLowerCase();
+    for (const word of VULGAR_WORDS) {
+      // Use word boundary for single words, substring match for phrases
+      const pattern = word.includes(" ")
+        ? word
+        : new RegExp(`\\b${word}\\b`);
+      const matched = typeof pattern === "string"
+        ? combined.includes(pattern)
+        : pattern.test(combined);
+      if (matched) {
+        return res.status(422).json({
+          success: false, blocked: true, layer: 1,
+          reason: "blocked_keyword", matched: word,
+          message: MODERATION_MESSAGES.blocked_keyword,
+        });
+      }
+    }
+
+    // Spam patterns — always runs locally
+    const SPAM_PATTERNS = [
+      { re: /(.)\1{3,}/, name: "repeated_characters" },
+      { re: /https?:\/\/|www\./i, name: "url_detected" },
+      { re: /\b\d{10}\b/, name: "phone_number" },
+      { re: /\b(free|click here|buy now|win prize|lottery|discount|offer|limited time)\b/i, name: "spam_phrase" },
+    ];
+    for (const { re, name } of SPAM_PATTERNS) {
+      if (re.test(combined)) {
+        return res.status(422).json({
+          success: false, blocked: true, layer: 1,
+          reason: "spam_pattern", matched: name,
+          message: MODERATION_MESSAGES.spam_pattern,
+        });
+      }
+    }
+
+    // Try algo-service for ML toxicity (Layer 2) — optional, fail open
     try {
       const modResult = await checkModeration(trimmedTitle, trimmedBody);
       if (!modResult.passed) {
         return res.status(422).json({
-          success: false,
-          blocked: true,
+          success: false, blocked: true,
           layer: modResult.layer_blocked,
           reason: modResult.reason,
           matched: modResult.matched_word,
@@ -84,9 +126,8 @@ const createPost = async (req, res, next) => {
       toxicityScore = modResult.toxicity_score || 0.0;
       moderationReason = modResult.reason || null;
     } catch {
-      // Moderation service down — fail open, flag as precaution
-      postFlagged = true;
-      console.warn("[Moderation] Service unreachable — post allowed through with flag");
+      // Algo-service down — local checks already passed, allow through
+      console.warn("[Moderation] Algo-service unreachable — local checks passed, post allowed");
     }
     // ─────────────────────────────────────────────────────────────────
     let categoryId = null;
