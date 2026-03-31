@@ -87,7 +87,7 @@ export default function Register() {
       const { data: res } = await registerApi(data);
       setUser(res.user);
       toast.success("🎉 Registration successful! Welcome to VoxCampus.", { duration: 4000 });
-      navigate("/");
+      navigate("/feed");
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {

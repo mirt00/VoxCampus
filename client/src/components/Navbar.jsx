@@ -15,7 +15,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-primary text-white px-4 py-3 flex items-center justify-between shadow-md print:hidden">
-      <Link to="/" className="text-lg font-bold tracking-wide">🎓 VoxCampus</Link>
+      <Link to="/feed" className="text-lg font-bold tracking-wide">🎓 VoxCampus</Link>
 
       <div className="flex items-center gap-2 text-sm">
         <Link to="/submit"

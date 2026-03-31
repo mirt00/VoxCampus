@@ -28,14 +28,17 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public — require login */}
-        <Route path="/" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Feed /></ProtectedRoute>} />
+        {/* Root — login page, redirects to /feed if already logged in */}
+        <Route path="/" element={<Login />} />
+
+        {/* Protected feed and app routes */}
+        <Route path="/feed" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Feed /></ProtectedRoute>} />
         <Route path="/submit" element={<ProtectedRoute roles={["user","admin","superadmin"]}><SubmitPost /></ProtectedRoute>} />
         <Route path="/post/:id" element={<ProtectedRoute roles={["user","admin","superadmin"]}><PostDetail /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Profile /></ProtectedRoute>} />
         <Route path="/change-password" element={<ProtectedRoute roles={["user","admin","superadmin"]}><ChangePassword /></ProtectedRoute>} />
 
-        {/* Auth — public */}
+        {/* Auth — public, redirect to /feed if already logged in */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

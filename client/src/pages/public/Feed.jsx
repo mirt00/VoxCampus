@@ -54,10 +54,9 @@ export default function Feed() {
       </div>
 
       {/* Floating + button */}
-      <Link to="/submit"
+      <Link to="/feed"
         className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-primary-light transition-colors active:scale-95 z-50 print:hidden">
         +
-      </Link>
-    </>
+      </Link>    </>
   );
 }
