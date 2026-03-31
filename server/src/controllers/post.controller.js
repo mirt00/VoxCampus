@@ -1,7 +1,7 @@
 const Post = require("../models/Post.model");
 const Category = require("../models/Category.model");
 const User = require("../models/User.model");
-const { checkDuplicate, rankPost } = require("../services/python.service");
+const { checkDuplicate, rankPost, checkModeration } = require("../services/python.service");
 const hashIP = require("../utils/hashIP");
 
 const createPost = async (req, res, next) => {
@@ -56,7 +56,39 @@ const createPost = async (req, res, next) => {
       }
     }
 
-    // Find or create category by name (skip if empty)
+    // ── ALGORITHM D: Multi-Layer Content Moderation ──────────────────
+    let postFlagged = false;
+    let toxicityScore = 0.0;
+    let moderationReason = null;
+
+    const MODERATION_MESSAGES = {
+      blocked_keyword: "Your post contains inappropriate language. Please revise and resubmit.",
+      spam_pattern: "Your post looks like spam. Please write a genuine campus suggestion.",
+      toxic_content: "Your post was flagged for harmful content. Please keep it respectful.",
+      irrelevant: "Your post does not appear to be related to campus issues. Please describe a specific campus concern.",
+    };
+
+    try {
+      const modResult = await checkModeration(trimmedTitle, trimmedBody);
+      if (!modResult.passed) {
+        return res.status(422).json({
+          success: false,
+          blocked: true,
+          layer: modResult.layer_blocked,
+          reason: modResult.reason,
+          matched: modResult.matched_word,
+          message: MODERATION_MESSAGES[modResult.reason] || "Your post was blocked by content moderation.",
+        });
+      }
+      postFlagged = modResult.flagged || false;
+      toxicityScore = modResult.toxicity_score || 0.0;
+      moderationReason = modResult.reason || null;
+    } catch {
+      // Moderation service down — fail open, flag as precaution
+      postFlagged = true;
+      console.warn("[Moderation] Service unreachable — post allowed through with flag");
+    }
+    // ─────────────────────────────────────────────────────────────────
     let categoryId = null;
     if (category) {
       let categoryDoc = await Category.findOne({ name: category });
@@ -87,7 +119,16 @@ const createPost = async (req, res, next) => {
       ipHash: authorType === "anonymous" ? hashIP(req.ip) : null,
     };
 
-    const post = await Post.create({ title: trimmedTitle, body: trimmedBody, category: categoryId, author, attachments: attachments || [] });
+    const post = await Post.create({
+      title: trimmedTitle,
+      body: trimmedBody,
+      category: categoryId,
+      author,
+      attachments: attachments || [],
+      flagged: postFlagged,
+      toxicityScore,
+      moderationReason,
+    });
     res.status(201).json(post);
   } catch (err) { next(err); }
 };

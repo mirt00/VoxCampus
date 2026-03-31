@@ -30,6 +30,9 @@ const postSchema = new mongoose.Schema(
     assignedAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     adminNote: String,       // internal note (admin only)
     adminFeedback: String,   // public response shown to all users
+    flagged: { type: Boolean, default: false },
+    toxicityScore: { type: Number, default: 0.0 },
+    moderationReason: { type: String, default: null },
     attachments: [String], // base64 images or URLs
   },
   { timestamps: true }

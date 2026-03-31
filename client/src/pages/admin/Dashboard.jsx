@@ -121,6 +121,7 @@ export default function Dashboard() {
                     <td className="px-4 py-3 font-medium max-w-xs">
                       <div className="flex items-center gap-2">
                         {post.isEscalated && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="Escalated" />}
+                        {post.flagged && <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" title="Flagged by moderation" />}
                         <span className="line-clamp-1">{post.title}</span>
                       </div>
                     </td>

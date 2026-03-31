@@ -24,4 +24,9 @@ const checkEscalation = async (submittedAt, categoryWeight, thresholdHours = 48)
   return data; // { should_escalate, deadline_hours, hours_elapsed }
 };
 
-module.exports = { rankPost, checkDuplicate, checkEscalation };
+const checkModeration = async (title, body) => {
+  const { data } = await axios.post(`${PYTHON_URL}/moderate`, { title, body }, { timeout: 5000 });
+  return data;
+};
+
+module.exports = { rankPost, checkDuplicate, checkEscalation, checkModeration };

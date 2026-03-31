@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useCreatePost, usePosts } from "../../hooks/usePosts";
 import { useAuth } from "../../hooks/useAuth";
 import DuplicateWarning from "../../components/DuplicateWarning";
-import Navbar from "../../components/Navbar";
+import ModerationWarning from "../../components/ModerationWarning";
 import Avatar from "../../components/Avatar";
 import PostCard from "../../components/PostCard";
 import api from "../../api/axiosInstance";
@@ -26,6 +26,7 @@ export default function SubmitPost() {
   const { data: recentPosts = [] } = usePosts({ feed: "latest" });
   const [anonymous, setAnonymous] = useState(false);
   const [duplicate, setDuplicate] = useState(null);
+  const [moderation, setModeration] = useState(null); // { reason, matched, layer }
   const [images, setImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -67,12 +68,20 @@ export default function SubmitPost() {
 
   const onSubmit = async (data) => {
     const authorType = (!user || anonymous) ? "anonymous" : "registered";
+    setModeration(null); // clear previous moderation warning
     try {
       await mutateAsync({ ...data, authorType, attachments: images });
       setSubmitted(true);
     } catch (err) {
       if (err.response?.status === 409) {
         setDuplicate(err.response.data.existingPostId);
+      } else if (err.response?.status === 422 && err.response.data?.blocked) {
+        // Moderation block — keep form, show warning, don't navigate
+        setModeration({
+          reason: err.response.data.reason,
+          matched: err.response.data.matched,
+          layer: err.response.data.layer,
+        });
       } else {
         toast.error(err.response?.data?.message || "Submission failed");
       }
@@ -143,6 +152,17 @@ export default function SubmitPost() {
           {duplicate && (
             <div className="mb-4">
               <DuplicateWarning postId={duplicate} onDismiss={() => setDuplicate(null)} />
+            </div>
+          )}
+
+          {moderation && (
+            <div className="mb-4">
+              <ModerationWarning
+                reason={moderation.reason}
+                matched={moderation.matched}
+                layer={moderation.layer}
+                onDismiss={() => setModeration(null)}
+              />
             </div>
           )}
 
