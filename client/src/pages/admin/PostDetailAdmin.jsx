@@ -87,7 +87,7 @@ export default function PostDetailAdmin() {
                         <p className="text-xs font-semibold text-gray-800">{post.author.realIdentity.name}</p>
                         <p className="text-xs text-gray-500">{post.author.realIdentity.email}</p>
                         {post.author.realIdentity.faculty && (
-                          <p className="text-xs text-gray-400">{post.author.realIdentity.faculty} · {post.author.realIdentity.studentId}</p>
+                          <p className="text-xs text-gray-400">{post.author.realIdentity.faculty}</p>
                         )}
                       </div>
                     </div>

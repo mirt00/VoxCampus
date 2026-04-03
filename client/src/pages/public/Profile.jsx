@@ -6,11 +6,7 @@ import Avatar from "../../components/Avatar";
 import api from "../../api/axiosInstance";
 import toast from "react-hot-toast";
 
-const FACULTIES = [
-  "Faculty of Engineering", "Faculty of Science", "Faculty of Arts",
-  "Faculty of Management", "Faculty of Education", "Faculty of Law",
-  "Faculty of Medicine", "Faculty of Agriculture", "Other",
-];
+const FACULTIES = ["BCA", "CSIT", "BBM", "BBA", "BBS", "+2", "B.Ed"];
 
 export default function Profile() {
   const { user, setUser } = useAuth();
@@ -20,8 +16,6 @@ export default function Profile() {
   const [form, setForm] = useState({
     name: user?.name || "",
     faculty: user?.faculty || "",
-    department: user?.department || "",
-    studentId: user?.studentId || "",
     phone: user?.phone || "",
   });
 
@@ -140,20 +134,6 @@ export default function Profile() {
                       {FACULTIES.map((f) => <option key={f}>{f}</option>)}
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Department</label>
-                      <input type="text" placeholder="e.g. Computer Science"
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        value={form.department} onChange={set("department")} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Student ID</label>
-                      <input type="text" placeholder="e.g. 2021-CS-001"
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        value={form.studentId} onChange={set("studentId")} />
-                    </div>
-                  </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Phone</label>
                     <input type="tel" placeholder="e.g. 98XXXXXXXX"
@@ -176,8 +156,6 @@ export default function Profile() {
                   {[
                     { label: "Email", value: user.email },
                     { label: "Faculty", value: user.faculty || "—" },
-                    { label: "Department", value: user.department || "—" },
-                    { label: "Student ID", value: user.studentId || "—" },
                     { label: "Phone", value: user.phone || "—" },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between py-2 border-b border-gray-50 last:border-0">

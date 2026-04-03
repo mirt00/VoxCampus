@@ -220,10 +220,7 @@ const getPosts = async (req, res, next) => {
     let posts = await Post.find(filter)
       .populate("category", "name slug")
       .populate("assignedAdmin", "name email")
-      .populate("author.userId", "name email faculty studentId avatar")
-      .lean();
-
-    // Determine if requester is admin (via cookie JWT)
+      .populate("author.userId", "name email faculty avatar")
     const jwt = require("jsonwebtoken");
     let requesterId = null;
     let requesterRole = "public";
@@ -282,7 +279,7 @@ const getPostById = async (req, res, next) => {
     const post = await Post.findById(req.params.id)
       .populate("category", "name slug weight")
       .populate("assignedAdmin", "name email")
-      .populate("author.userId", "name email faculty studentId avatar")
+      .populate("author.userId", "name email faculty avatar")
       .lean();
     if (!post) return res.status(404).json({ message: "Post not found" });
 

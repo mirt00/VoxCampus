@@ -7,8 +7,6 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ["user", "admin", "superadmin"], default: "user" },
     faculty: { type: String, default: "" },
-    department: { type: String, default: "" },
-    studentId: { type: String, default: "" },
     phone: { type: String, default: "" },
     isActive: { type: Boolean, default: true },
     avatar: { type: String, default: null },

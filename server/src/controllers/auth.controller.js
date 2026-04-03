@@ -13,12 +13,12 @@ const COOKIE_OPTS = {
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, faculty, department, studentId, phone } = req.body;
+    const { name, email, password, faculty, phone } = req.body;
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: "Email already in use" });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({ name, email, passwordHash, faculty, department, studentId, phone });
+    const user = await User.create({ name, email, passwordHash, faculty, phone });
 
     const token = generateToken({ id: user._id, role: user.role });
     res.cookie("token", token, COOKIE_OPTS);
@@ -119,10 +119,10 @@ const updateAvatar = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, faculty, department, studentId, phone } = req.body;
+    const { name, faculty, phone } = req.body;
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { name, faculty, department, studentId, phone },
+      { name, faculty, phone },
       { new: true }
     ).select("-passwordHash -resetToken -resetTokenExpiry");
     res.json(user);
