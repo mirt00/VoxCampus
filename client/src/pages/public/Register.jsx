@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { registerApi } from "../../api/auth.api";
 import { useAuth } from "../../hooks/useAuth";
@@ -47,72 +47,63 @@ const PasswordStrength = ({ password }) => {
   );
 };
 
-const Field = ({ label, error, required, children }) => (
-  <div>
-    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-      {label} {required && <span className="text-red-400">*</span>}
-    </label>
-    {children}
-    {error && (
-      <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
-        <span>⚠</span> {error}
-      </p>
-    )}
-  </div>
-);
-
 export default function Register() {
-  const { setUser } = useAuth();
+  const { setUser, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const { register, handleSubmit, watch, formState: { errors, isValid } } = useForm({
     mode: "onBlur",
-    defaultValues: { name: "", email: "", password: "", faculty: "", studentId: "", phone: "" },
+    defaultValues: { name: "", email: "", password: "", faculty: "", phone: "" },
   });
 
   const password = watch("password");
 
+  // Already logged in
+  if (!authLoading && user) return <Navigate to="/feed" replace />;
+
   const inputClass = (hasError) =>
-    `w-full border rounded-xl px-4 py-2.5 text-sm transition-all duration-150 focus:outline-none focus:ring-2 ${
-      hasError
-        ? "border-red-400 focus:ring-red-200 bg-red-50"
-        : "border-gray-200 focus:ring-primary/30 focus:border-primary bg-white"
+    `w-full border rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 ${
+      hasError ? "border-red-400 focus:ring-red-200 bg-red-50" : "border-gray-200 focus:ring-primary/30 focus:border-primary bg-white"
     }`;
 
   const onSubmit = async (data) => {
-    setLoading(true);
+    setSubmitting(true);
     try {
       const { data: res } = await registerApi(data);
       setUser(res.user);
-      toast.success("🎉 Registration successful! Welcome to VoxCampus.", { duration: 4000 });
+      toast.success("🎉 Welcome to VoxCampus!", { duration: 3000 });
       navigate("/feed");
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel */}
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Left panel — desktop only */}
       <div className="hidden lg:flex w-5/12 bg-gradient-to-br from-primary to-primary-light flex-col items-center justify-center p-12 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="absolute rounded-full border border-white"
-              style={{ width: `${(i+1)*120}px`, height: `${(i+1)*120}px`, top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
+              style={{ width: `${(i+1)*130}px`, height: `${(i+1)*130}px`, top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
           ))}
         </div>
         <div className="relative z-10 text-center">
-          <div className="text-7xl mb-6">🎓</div>
+          <div className="text-7xl mb-5">🎓</div>
           <h1 className="text-4xl font-extrabold mb-3">VoxCampus</h1>
           <p className="text-blue-200 text-lg max-w-xs leading-relaxed">
-            Your voice shapes our campus. Join thousands making a difference.
+            Your voice shapes our campus. Join and make a difference.
           </p>
           <div className="mt-10 space-y-3 text-left">
-            {["Post suggestions anonymously or with your name", "Vote on ideas that matter to you", "Track campus action on your feedback"].map((t, i) => (
+            {[
+              "Post suggestions anonymously or with your name",
+              "Vote on ideas that matter to you",
+              "Track campus action on your feedback",
+            ].map((t, i) => (
               <div key={i} className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-2.5">
                 <span className="text-accent text-lg">✓</span>
                 <span className="text-sm text-blue-100">{t}</span>
@@ -123,9 +114,10 @@ export default function Register() {
       </div>
 
       {/* Right — form */}
-      <div className="flex-1 flex items-start justify-center px-4 sm:px-8 py-8 bg-gray-50 overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-10 bg-gray-50 overflow-y-auto">
         <div className="w-full max-w-md">
-          <div className="lg:hidden text-center mb-6">
+          {/* Mobile header */}
+          <div className="lg:hidden text-center mb-8">
             <span className="text-5xl">🎓</span>
             <h1 className="text-2xl font-extrabold text-primary mt-2">VoxCampus</h1>
           </div>
@@ -137,36 +129,47 @@ export default function Register() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
 
               {/* Full Name */}
-              <Field label="Full Name" error={errors.name?.message} required>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Full Name <span className="text-red-400">*</span>
+                </label>
                 <input type="text" placeholder="e.g. Amrit Thapa"
                   className={inputClass(errors.name)}
                   {...register("name", {
                     required: "Full name is required",
-                    minLength: { value: 3, message: "Name must be at least 3 characters" },
-                    pattern: { value: /^[a-zA-Z\s]+$/, message: "Name must contain only alphabets" },
+                    minLength: { value: 3, message: "At least 3 characters" },
+                    pattern: { value: /^[a-zA-Z\s]+$/, message: "Only alphabets allowed" },
                   })}
                 />
-              </Field>
+                {errors.name && <p className="mt-1 text-xs text-red-500">⚠ {errors.name.message}</p>}
+              </div>
 
               {/* Email */}
-              <Field label="Email Address" error={errors.email?.message} required>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Email <span className="text-red-400">*</span>
+                </label>
                 <input type="email" placeholder="you@campus.edu"
                   className={inputClass(errors.email)}
                   {...register("email", {
                     required: "Email is required",
-                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email address" },
+                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email" },
                   })}
                 />
-              </Field>
+                {errors.email && <p className="mt-1 text-xs text-red-500">⚠ {errors.email.message}</p>}
+              </div>
 
               {/* Password */}
-              <Field label="Password" error={errors.password?.message} required>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Password <span className="text-red-400">*</span>
+                </label>
                 <div className="relative">
                   <input type={showPassword ? "text" : "password"} placeholder="Min 8 characters"
                     className={`${inputClass(errors.password)} pr-11`}
                     {...register("password", {
                       required: "Password is required",
-                      minLength: { value: 8, message: "Password must be at least 8 characters" },
+                      minLength: { value: 8, message: "At least 8 characters" },
                       pattern: {
                         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
                         message: "Must include uppercase, lowercase, number & special character",
@@ -174,42 +177,39 @@ export default function Register() {
                     })}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     <EyeIcon open={showPassword} />
                   </button>
                 </div>
+                {errors.password && <p className="mt-1 text-xs text-red-500">⚠ {errors.password.message}</p>}
                 <PasswordStrength password={password} />
-              </Field>
+              </div>
 
-              {/* Faculty */}
-              <Field label="Faculty" error={errors.faculty?.message} required>
-                <div className="relative">
-                  <select
-                    className={`${inputClass(errors.faculty)} appearance-none cursor-pointer pr-10`}
-                    {...register("faculty", { required: "Please select your faculty" })}>
-                    <option value="">Select your faculty</option>
-                    {FACULTIES.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </Field>
-
-              {/* Student ID + Phone */}
+              {/* Faculty + Phone — side by side on sm+ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Student ID" error={errors.studentId?.message} required>
-                  <input type="text" placeholder="VC-2026-001"
-                    className={inputClass(errors.studentId)}
-                    {...register("studentId", {
-                      required: "Student ID is required",
-                      pattern: { value: /^[A-Za-z0-9-]+$/, message: "Alphanumeric only (e.g. VC-2026-001)" },
-                    })}
-                  />
-                </Field>
-                <Field label="Phone Number" error={errors.phone?.message} required>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Faculty <span className="text-red-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <select className={`${inputClass(errors.faculty)} appearance-none cursor-pointer pr-10`}
+                      {...register("faculty", { required: "Please select your faculty" })}>
+                      <option value="">Select faculty</option>
+                      {FACULTIES.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                  {errors.faculty && <p className="mt-1 text-xs text-red-500">⚠ {errors.faculty.message}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Phone <span className="text-red-400">*</span>
+                  </label>
                   <input type="tel" placeholder="98XXXXXXXX"
                     className={inputClass(errors.phone)}
                     {...register("phone", {
@@ -217,16 +217,19 @@ export default function Register() {
                       pattern: { value: /^\d{10}$/, message: "Must be exactly 10 digits" },
                     })}
                   />
-                </Field>
+                  {errors.phone && <p className="mt-1 text-xs text-red-500">⚠ {errors.phone.message}</p>}
+                </div>
               </div>
 
-              {/* Submit */}
-              <button type="submit" disabled={!isValid || loading}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                💡 You can post suggestions anonymously — your name is never shown unless you choose to.
+              </div>
+
+              <button type="submit" disabled={!isValid || submitting}
                 className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm
-                           hover:bg-primary-light transition-all duration-200
-                           disabled:opacity-40 disabled:cursor-not-allowed
-                           active:scale-[0.98] shadow-sm shadow-primary/30 mt-2">
-                {loading ? (
+                           hover:bg-primary-light transition-all disabled:opacity-40 disabled:cursor-not-allowed
+                           active:scale-[0.98] shadow-sm shadow-primary/30">
+                {submitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -240,10 +243,7 @@ export default function Register() {
 
             <p className="text-center text-sm text-gray-500 mt-5">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary font-semibold hover:underline">Login</Link>
-            </p>
-            <p className="text-center text-sm text-gray-400 mt-2">
-              <Link to="/" className="hover:underline">← Back to feed</Link>
+              <Link to="/" className="text-primary font-semibold hover:underline">Login</Link>
             </p>
           </div>
         </div>

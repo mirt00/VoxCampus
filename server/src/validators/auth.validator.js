@@ -8,9 +8,7 @@ const registerSchema = Joi.object({
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .required()
     .messages({ "string.pattern.base": "Password must include uppercase, lowercase, number and special character" }),
-  faculty: Joi.string().valid("BCA", "CSIT", "BBM", "BBA", "B.Ed").required(),
-  studentId: Joi.string().pattern(/^[A-Za-z0-9-]+$/).required()
-    .messages({ "string.pattern.base": "Student ID must be alphanumeric (e.g. VC-2026-001)" }),
+  faculty: Joi.string().valid("BCA", "CSIT", "BBM", "BBA", "BBS", "B.Ed", "+2").required(),
   phone: Joi.string().pattern(/^\d{10}$/).required()
     .messages({ "string.pattern.base": "Phone must be exactly 10 digits" }),
 });
