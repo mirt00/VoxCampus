@@ -1,34 +1,25 @@
-# architecture.md — VoxCampus (Campus Suggestion Platform)
+# architecture.md — VoxCampus
 
 ## System Overview
 
-A web-based campus suggestion platform replacing the physical suggestion box. Students and staff submit complaints/suggestions via QR code or direct URL. The public feed shows ranked posts with voting. Admins manage, escalate, and resolve issues.
+Campus suggestion platform. Students submit suggestions via QR or URL, vote on ideas, admins manage and escalate issues. All content is moderated by 4 algorithms before saving.
 
 ---
 
 ## High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                         │
-│   React + Vite (SPA) — JSX only, no TypeScript             │
-│   Public Feed │ Submit Form │ Admin Dashboard │ QR Entry    │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTP/REST (JSON)
-                           │ Axios + httpOnly Cookie (JWT)
-┌──────────────────────────▼──────────────────────────────────┐
-│                       API LAYER                             │
-│   Node.js + Express.js (CommonJS)                           │
-│   Auth │ Post │ Vote │ Admin │ QR │ Category Routes         │
-└───────┬───────────────────────────────────┬─────────────────┘
-        │ Mongoose ODM                       │ HTTP (internal)
-┌───────▼──────────────┐         ┌──────────▼────────────────┐
-│     DATA LAYER       │         │    ALGORITHM SERVICE       │
-│   MongoDB Atlas      │         │   Python (FastAPI)         │
-│   users, posts,      │         │   TDE-Rank (Algorithm A)  │
-│   votes, categories, │         │   Cosine Sim (Algorithm B) │
-│   escalation_log     │         │   PBE Escalation (Algo C)  │
-└──────────────────────┘         └───────────────────────────┘
+Browser / Phone
+      │
+      ▼
+React + Vite (JSX)          ← /feed, /submit, /post/:id, /profile
+      │ Axios + httpOnly Cookie
+      ▼
+Node.js + Express            ← /api/*
+      │ Mongoose
+      ├──► MongoDB Atlas      ← users, posts, votes, categories, escalation_log
+      │ Axios (internal)
+      └──► Python FastAPI     ← /rank, /duplicate-check, /escalate-check, /moderate
 ```
 
 ---
@@ -37,134 +28,87 @@ A web-based campus suggestion platform replacing the physical suggestion box. St
 
 | Decision | Choice |
 |---|---|
-| Frontend language | JavaScript (JSX) — no TypeScript |
-| Backend language | JavaScript (CommonJS) — no TypeScript |
-| ODM | Mongoose (not Prisma) |
-| JWT storage | httpOnly cookie (not localStorage) |
-| Algorithm service | Python FastAPI (separate service) |
-| Styling | Tailwind CSS v3 |
-| State / data fetching | TanStack Query (react-query) |
-| Notifications | react-hot-toast |
-| Timestamps | date-fns |
-| QR display | qrcode.react (frontend) |
-| Validation | Joi (backend) |
-| Security | helmet + cors + express-rate-limit |
-| Email | Nodemailer |
-| Scheduler | node-cron |
+| Frontend language | JavaScript (JSX) |
+| Backend language | JavaScript (CommonJS) |
+| ODM | Mongoose |
+| JWT storage | httpOnly cookie |
+| Algorithm service | Python FastAPI |
+| Form validation | React Hook Form |
+| Image storage | Cloudinary |
+| Deployment | Render (unified server+client) |
 
 ---
 
-## Component Breakdown
+## Route Structure
 
-### 1. Frontend — React + Vite (JSX)
-
-| Component | Responsibility |
-|---|---|
-| `PublicFeed` | Trending / Latest / Top tabs, search bar, category filter chips |
-| `SubmitForm` | Anonymous or named submission, duplicate warning on 409 |
-| `PostCard` | Title, body snippet, vote button, status badge, category, "X ago" |
-| `AdminLogin` | JWT cookie-based login |
-| `AdminDashboard` | Paginated table, status dropdown, escalation badge, filters |
-| `AdminPanel` | Manage admin accounts, assign roles (superadmin only) |
-| `QRPage` | Display + print QR code using qrcode.react |
-
-### 2. Backend — Node.js + Express.js (CommonJS)
-
-| Module | Responsibility |
-|---|---|
-| `auth.routes.js` | Register, login (httpOnly cookie), forgot/reset/change password |
-| `post.routes.js` | CRUD posts, calls Python for duplicate check + ranking |
-| `vote.routes.js` | Upvote, deduplication by userId or ipHash |
-| `admin.routes.js` | Status updates, assign admin, admin user CRUD |
-| `category.routes.js` | List categories (used by frontend dropdowns) |
-| `qr.routes.js` | Return submission URL for QR generation |
-| `escalation.cron.js` | node-cron hourly job — calls Python PBE, sends email alerts |
-| `middleware/auth.js` | JWT cookie verification, role guard |
-| `middleware/validate.js` | Joi schema validation wrapper |
-| `middleware/errorHandler.js` | Global error handler |
-| `middleware/rateLimiter.js` | express-rate-limit on submit endpoint |
-
-### 3. Algorithm Service — Python (FastAPI)
-
-| Endpoint | Algorithm | Description |
+| URL | Access | Description |
 |---|---|---|
-| `POST /rank` | TDE-Rank (Algorithm A) | Score = (votes-1) / (ageHours+2)^gravity |
-| `POST /duplicate-check` | Cosine Similarity (Algorithm B) | TF-IDF vectorize, return score + matchedPostId |
-| `POST /escalate-check` | PBE (Algorithm C) | deadline = threshold × categoryWeight, return shouldEscalate |
-
-### 4. Database — MongoDB (Mongoose)
-
-Collections: `users`, `posts`, `votes`, `categories`, `escalation_log`
-(See schema.md for full field definitions)
+| `/` | Public | Login page (redirects to /feed if logged in) |
+| `/login` | Public | Login (same as /) |
+| `/register` | Public | Register (name, email, password, faculty, phone) |
+| `/feed` | Auth required | Main feed with tabs/search/filter |
+| `/submit` | Auth required | Submit suggestion form |
+| `/post/:id` | Auth required | Post detail |
+| `/profile` | Auth required | User profile + avatar |
+| `/change-password` | Auth required | Change password |
+| `/forgot-password` | Public | Forgot password |
+| `/reset-password/:token` | Public | Reset password |
+| `/admin/login` | Public | Admin login |
+| `/admin/dashboard` | Admin | Post management table |
+| `/admin/reports` | Admin | Analytics report |
+| `/admin/qr` | Admin | QR code generator |
+| `/admin/manage-admins` | Superadmin | Create/deactivate admins |
 
 ---
 
-## Data Flow: Submitting a Post
+## Algorithms
 
+### Algorithm A — TDE-Rank (Trending Feed)
 ```
-User fills form
-      │
-      ▼
-React POST /api/posts (cookie sent automatically)
-      │
-      ▼
-Express validates with Joi
-      │
-      ▼
-Express calls Python POST /duplicate-check
-      │
-   Score ≥ 0.85? ──YES──► Return 409 { existingPostId }
-      │ NO                  React shows duplicate warning toast
-      ▼
-Save post to MongoDB
-      │
-      ▼
-Return 201 to React → success toast
+score = votes / (age_hours + 2) ^ 1.8
 ```
+Runs in Python. Falls back to voteCount if algo-service is down.
 
-## Data Flow: Loading Trending Feed
+### Algorithm B — Cosine Similarity (Duplicate Detection)
+Compares title-to-title and body-to-body separately using TF-IDF.
+Falls back to Jaccard similarity in Node.js if algo-service is down.
+Threshold: 0.85 (Python) / 0.7 title or 0.4+0.4 combined (Node fallback)
 
+### Algorithm C — PBE Escalation
 ```
-React GET /api/posts?feed=trending
-      │
-      ▼
-Express fetches recent posts from MongoDB
-      │
-      ▼
-For each post → calls Python POST /rank (TDE-Rank score)
-      │
-      ▼
-Sorts by score descending → returns ranked list
+deadline = threshold_hours * category_weight
 ```
+Runs hourly via node-cron. Falls back to local JS calculation if algo-service is down.
 
-## Data Flow: Escalation (Hourly Cron)
+### Algorithm D — MLCM (Multi-Layer Content Moderation)
+Runs BEFORE every post is saved. All layers run locally in Node.js (no algo-service dependency for Layers 1 & 3).
 
-```
-node-cron fires every hour
-      │
-      ▼
-Fetch all posts { status: 'pending', isEscalated: false }
-      │
-      ▼
-For each post → Python POST /escalate-check
-      │
-   shouldEscalate? ──YES──► Update post isEscalated=true
-      │                      Insert escalation_log document
-      │                      Send email via Nodemailer
-      ▼
-Log results to console
-```
+| Layer | Check | Runs In |
+|---|---|---|
+| 1 | Vulgar words + spam patterns | Node.js (always) |
+| 2 | ML toxicity score (detoxify) | Python (optional) |
+| 3 | Campus relevance keywords | Node.js (always) |
+
+Returns HTTP 422 if blocked. Post is saved with `flagged=true` if borderline.
 
 ---
 
 ## Security
 
-- JWT in httpOnly cookie (not localStorage) — XSS safe
-- Bcrypt password hashing (salt rounds: 12)
+- JWT in httpOnly cookie (XSS safe)
+- Bcrypt password hashing (12 rounds)
 - Rate limiting on POST /api/posts (5/hour per IP)
-- Anonymous posts store only SHA256 IP hash (not raw IP)
-- Admin routes protected by role middleware
 - Helmet HTTP security headers
-- CORS whitelist (only frontend origin allowed)
-- Python service on internal network only (not public)
-- Joi validation on all POST/PATCH inputs
+- CORS whitelist
+- Content moderation on every post submission
+- Anonymous posts store only IP hash — real identity visible to admin only
+
+---
+
+## Deployment
+
+| Service | URL |
+|---|---|
+| Frontend + Backend | https://voxcampus-3xzm.onrender.com |
+| Algorithm Service | https://voxcampusalgo.onrender.com |
+| Database | MongoDB Atlas |
