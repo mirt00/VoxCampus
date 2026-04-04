@@ -21,7 +21,7 @@ const createPost = async (req, res, next) => {
     try {
       const existing = await Post.find({}, "title body _id").lean();
       const existingPosts = existing.map((p) => ({ id: p._id.toString(), title: p.title, body: p.body }));
-      const dupResult = await checkDuplicate(`${trimmedTitle} ${trimmedBody}`, existingPosts);
+      const dupResult = await checkDuplicate(trimmedTitle, trimmedBody, existingPosts);
       if (dupResult.is_duplicate) {
         return res.status(409).json({ message: "Similar post exists", existingPostId: dupResult.matched_post_id });
       }
@@ -221,6 +221,7 @@ const getPosts = async (req, res, next) => {
       .populate("category", "name slug")
       .populate("assignedAdmin", "name email")
       .populate("author.userId", "name email faculty avatar")
+      .lean()
     const jwt = require("jsonwebtoken");
     let requesterId = null;
     let requesterRole = "public";

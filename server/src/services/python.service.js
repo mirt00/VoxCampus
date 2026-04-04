@@ -7,9 +7,10 @@ const rankPost = async (votes, ageHours, gravity = 1.8) => {
   return data.score;
 };
 
-const checkDuplicate = async (newText, existingPosts) => {
+const checkDuplicate = async (newTitle, newBody, existingPosts) => {
   const { data } = await axios.post(`${PYTHON_URL}/duplicate-check`, {
-    new_text: newText,
+    new_title: newTitle,
+    new_body: newBody,
     existing_posts: existingPosts,
   });
   return data; // { is_duplicate, score, matched_post_id }

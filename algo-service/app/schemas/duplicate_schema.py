@@ -7,7 +7,8 @@ class ExistingPost(BaseModel):
     body: str
 
 class DuplicateRequest(BaseModel):
-    new_text: str
+    new_title: str
+    new_body: str = ""
     existing_posts: list[ExistingPost]
 
 class DuplicateResponse(BaseModel):

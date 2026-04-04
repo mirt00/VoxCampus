@@ -9,5 +9,5 @@ router = APIRouter()
 def duplicate_check(req: DuplicateRequest):
     threshold = float(os.getenv("SIMILARITY_THRESHOLD", 0.85))
     existing = [{"id": p.id, "title": p.title, "body": p.body} for p in req.existing_posts]
-    result = check_duplicate(req.new_text, existing, threshold)
+    result = check_duplicate(req.new_title, existing, threshold, req.new_body)
     return result
