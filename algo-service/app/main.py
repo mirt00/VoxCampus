@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from app.routers import rank, duplicate, escalate, moderation
+from app.routers import rank, duplicate, escalate, moderation, engagement
 
 load_dotenv()
 
@@ -18,6 +18,7 @@ app.include_router(rank.router)
 app.include_router(duplicate.router)
 app.include_router(escalate.router)
 app.include_router(moderation.router)
+app.include_router(engagement.router)
 
 @app.get("/health")
 def health():

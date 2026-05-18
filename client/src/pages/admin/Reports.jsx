@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getAdminPosts } from "../../api/admin.api";
+import { FileText, ArrowUp, CheckCircle, AlertTriangle, Users, Award } from "lucide-react";
+import { getAdminPosts, getEngagement } from "../../api/admin.api";
 import AdminNavbar from "../../components/AdminNavbar";
 
 export default function Reports() {
@@ -28,6 +29,15 @@ export default function Reports() {
   const topPosts = [...posts].sort((a, b) => b.voteCount - a.voteCount).slice(0, 5);
 
   const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+
+  const { data: engagementData, isLoading: engLoading } = useQuery({
+    queryKey: ["adminEngagement"],
+    queryFn: () => getEngagement().then(r => r.data),
+    staleTime: 60000,
+  });
+
+  const engagement = engagementData?.engagement;
+  const topEngaged = engagement?.users?.slice(0, 5) || [];
 
   if (isLoading) return (
     <>
@@ -57,13 +67,15 @@ export default function Reports() {
           {/* KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: "Total Posts", value: total, color: "bg-primary/10 text-primary", icon: "📋" },
-              { label: "Total Votes", value: totalVotes, color: "bg-accent/10 text-accent", icon: "▲" },
-              { label: "Resolved", value: resolved, color: "bg-green-100 text-green-700", icon: "✅" },
-              { label: "Escalated", value: escalated, color: "bg-red-100 text-red-600", icon: "🔴" },
-            ].map(({ label, value, color, icon }) => (
+              { label: "Total Posts", value: total, color: "bg-primary/10 text-primary", icon: FileText },
+              { label: "Total Votes", value: totalVotes, color: "bg-accent/10 text-accent", icon: ArrowUp },
+              { label: "Resolved", value: resolved, color: "bg-green-100 text-green-700", icon: CheckCircle },
+              { label: "Escalated", value: escalated, color: "bg-red-100 text-red-600", icon: AlertTriangle },
+            ].map(({ label, value, color, icon: Icon }) => (
               <div key={label} className={`${color} rounded-2xl p-5 text-center`}>
-                <div className="text-2xl mb-1">{icon}</div>
+                <div className="flex justify-center mb-2">
+                  <Icon className="w-6 h-6" strokeWidth={2.5} />
+                </div>
                 <p className="text-3xl font-extrabold">{value}</p>
                 <p className="text-xs font-semibold mt-1 opacity-80">{label}</p>
               </div>
@@ -115,6 +127,73 @@ export default function Reports() {
             </div>
           </div>
 
+          {/* Engagement Score */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-accent" />
+                <h2 className="font-bold text-gray-800">User Engagement Score</h2>
+              </div>
+              {!engLoading && engagement?.summary && (
+                <span className="text-xs text-gray-400">
+                  Avg {engagement.summary.averageEngagement} · {engagement.summary.totalUsers} users
+                </span>
+              )}
+            </div>
+
+            {engLoading ? (
+              <p className="text-gray-400 text-sm py-4 text-center">Computing engagement...</p>
+            ) : topEngaged.length === 0 ? (
+              <p className="text-gray-400 text-sm py-4 text-center">No engagement data yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {topEngaged.map((u, i) => (
+                  <div key={u.userId}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                      i === 0 ? "bg-yellow-100 text-yellow-700" :
+                      i === 1 ? "bg-gray-100 text-gray-600" :
+                      i === 2 ? "bg-orange-100 text-orange-600" : "bg-gray-50 text-gray-400"
+                    }`}>{i + 1}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{u.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{u.faculty}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> {u.postCount}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ArrowUp className="w-3 h-3" /> {u.voteCount}
+                      </span>
+                    </div>
+                    <span className="text-sm font-extrabold text-accent bg-accent/10 px-2.5 py-1 rounded-lg">
+                      {u.engagementScore}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {engagement?.summary && (
+              <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-4 text-center text-xs">
+                <div>
+                  <p className="font-bold text-gray-800 text-sm">{engagement.summary.totalPostsCreated}</p>
+                  <p className="text-gray-400">Posts</p>
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800 text-sm">{engagement.summary.totalVotesCast}</p>
+                  <p className="text-gray-400">Votes</p>
+                </div>
+                <div>
+                  <p className="font-bold text-gray-800 text-sm">{engagement.summary.averageEngagement}</p>
+                  <p className="text-gray-400">Avg Score</p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top categories */}
             <div className="bg-white rounded-2xl border border-gray-100 p-6">
@@ -152,8 +231,8 @@ export default function Reports() {
                     <span className="flex-1 text-sm text-gray-700 truncate group-hover:text-primary transition-colors">
                       {post.title}
                     </span>
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full flex-shrink-0">
-                      ▲ {post.voteCount}
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+                      <ArrowUp className="w-3 h-3" strokeWidth={3} /> {post.voteCount}
                     </span>
                   </Link>
                 ))}

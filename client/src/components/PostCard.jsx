@@ -58,7 +58,7 @@ export default function PostCard({ post }) {
           </span>
         )}
         <StatusBadge status={post.status} />
-        {post.isEscalated && (
+        {post.isEscalated && post.status === "pending" && (
           <span className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-full font-semibold animate-pulse">
             🔴 Escalated
           </span>

@@ -25,7 +25,7 @@ export default function PostMenu({ postId, onEdit }) {
       qc.invalidateQueries({ queryKey: ["posts"] });
       qc.invalidateQueries({ queryKey: ["post", postId] });
       toast.success("Post deleted");
-      navigate("/");
+      navigate("/feed");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete");
     }

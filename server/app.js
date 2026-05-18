@@ -16,8 +16,12 @@ const uploadRoutes = require("./src/routes/upload.routes");
 const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false }));
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5173"];
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.push(/^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:5173$/);
+}
 app.use(cors({
-  origin: [process.env.CLIENT_URL, "http://localhost:5173"],
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json({ limit: "50mb" }));

@@ -106,7 +106,7 @@ export default function PostDetailAdmin() {
             <div className="flex gap-2 flex-wrap mb-3">
               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{post.category?.name}</span>
               <StatusBadge status={post.status} />
-              {post.isEscalated && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">🔴 Escalated</span>}
+              {post.isEscalated && post.status === "pending" && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">🔴 Escalated</span>}
               <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">▲ {post.voteCount} votes</span>
             </div>
 

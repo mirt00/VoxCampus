@@ -1,7 +1,9 @@
 const Post = require("../models/Post.model");
 const User = require("../models/User.model");
+const Vote = require("../models/Vote.model");
 const EscalationLog = require("../models/EscalationLog.model");
 const bcrypt = require("bcryptjs");
+const { getEngagement } = require("../services/python.service");
 
 const getPosts = async (req, res, next) => {
   try {
@@ -87,4 +89,49 @@ const deactivateAdmin = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getPosts, updateStatus, assignAdmin, saveNote, saveFeedback, getEscalationLog, getAdmins, createAdmin, deactivateAdmin };
+const getEngagementData = async (req, res, next) => {
+  try {
+    const users = await User.find({ role: "user", isActive: true })
+      .select("_id name faculty createdAt")
+      .lean();
+
+    const postCounts = await Post.aggregate([
+      { $match: { "author.userId": { $ne: null } } },
+      { $group: { _id: "$author.userId", count: { $sum: 1 } } },
+    ]);
+    const postMap = {};
+    for (const p of postCounts) postMap[String(p._id)] = p.count;
+
+    const voteCounts = await Vote.aggregate([
+      { $match: { userId: { $ne: null } } },
+      { $group: { _id: "$userId", count: { $sum: 1 } } },
+    ]);
+    const voteMap = {};
+    for (const v of voteCounts) voteMap[String(v._id)] = v.count;
+
+    const userActivityList = users
+      .filter((u) => postMap[String(u._id)] || voteMap[String(u._id)])
+      .map((u) => ({
+        userId: String(u._id),
+        name: u.name,
+        faculty: u.faculty || "Unknown",
+        postCount: postMap[String(u._id)] || 0,
+        voteCount: voteMap[String(u._id)] || 0,
+        daysSinceFirstActivity: Math.max(
+          1,
+          (Date.now() - new Date(u.createdAt).getTime()) / 86400000
+        ),
+      }));
+
+    let result;
+    try {
+      result = await getEngagement(userActivityList);
+    } catch {
+      result = null;
+    }
+
+    res.json({ engagement: result, raw: userActivityList });
+  } catch (err) { next(err); }
+};
+
+module.exports = { getPosts, updateStatus, assignAdmin, saveNote, saveFeedback, getEscalationLog, getAdmins, createAdmin, deactivateAdmin, getEngagementData };

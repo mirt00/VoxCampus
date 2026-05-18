@@ -3,6 +3,8 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Public pages
+import Gateway from "./pages/public/Gateway";
+import Auth from "./pages/public/Auth";
 import Feed from "./pages/public/Feed";
 import SubmitPost from "./pages/public/SubmitPost";
 import PostDetail from "./pages/public/PostDetail";
@@ -28,8 +30,9 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Root — login page, redirects to /feed if already logged in */}
-        <Route path="/" element={<Login />} />
+        {/* Root — gateway homepage */}
+        <Route path="/" element={<Gateway />} />
+        <Route path="/auth" element={<Auth />} />
 
         {/* Protected feed and app routes */}
         <Route path="/feed" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Feed /></ProtectedRoute>} />
@@ -38,7 +41,7 @@ export default function App() {
         <Route path="/profile" element={<ProtectedRoute roles={["user","admin","superadmin"]}><Profile /></ProtectedRoute>} />
         <Route path="/change-password" element={<ProtectedRoute roles={["user","admin","superadmin"]}><ChangePassword /></ProtectedRoute>} />
 
-        {/* Auth — public, redirect to /feed if already logged in */}
+        {/* Auth — public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -51,11 +54,11 @@ export default function App() {
 
         {/* Protected Admin */}
         <Route path="/admin/dashboard" element={<ProtectedRoute roles={["admin", "superadmin"]}><Dashboard /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute roles={["admin", "superadmin"]}><Reports /></ProtectedRoute>} />
         <Route path="/admin/post/:id" element={<ProtectedRoute roles={["admin", "superadmin"]}><PostDetailAdmin /></ProtectedRoute>} />
         <Route path="/admin/manage-admins" element={<ProtectedRoute roles={["superadmin"]}><ManageAdmins /></ProtectedRoute>} />
         <Route path="/admin/change-password" element={<ProtectedRoute roles={["admin", "superadmin"]}><AdminChangePassword /></ProtectedRoute>} />
         <Route path="/admin/qr" element={<ProtectedRoute roles={["admin", "superadmin"]}><QRPage /></ProtectedRoute>} />
-        <Route path="/admin/reports" element={<ProtectedRoute roles={["admin", "superadmin"]}><Reports /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

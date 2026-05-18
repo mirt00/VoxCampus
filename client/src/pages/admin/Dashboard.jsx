@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { FileText, ArrowUp, CheckCircle, AlertTriangle, Link as LinkIcon } from "lucide-react";
 import { getAdminPosts, updatePostStatus } from "../../api/admin.api";
 import AdminNavbar from "../../components/AdminNavbar";
 import StatusBadge from "../../components/StatusBadge";
@@ -18,11 +19,30 @@ export default function Dashboard() {
     queryFn: () => getAdminPosts(filters).then((r) => r.data),
   });
 
+  const { data: allData } = useQuery({
+    queryKey: ["adminPosts", { limit: 1000 }],
+    queryFn: () => getAdminPosts({ limit: 1000 }).then(r => r.data),
+    staleTime: 30000,
+  });
+
+  const allPosts = allData?.posts || [];
+  const total = allPosts.length;
+  const totalVotes = allPosts.reduce((s, p) => s + (p.voteCount || 0), 0);
+  const resolved = allPosts.filter(p => p.status === "resolved").length;
+  const escalated = allPosts.filter(p => p.isEscalated).length;
+
   const { mutate: changeStatus } = useMutation({
     mutationFn: ({ id, status }) => updatePostStatus(id, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["adminPosts"] }),
     onError: () => toast.error("Failed to update status"),
   });
+
+  const KPI_CARDS = [
+    { label: "Total Posts", value: total, color: "bg-primary/10 text-primary", icon: FileText },
+    { label: "Total Votes", value: totalVotes, color: "bg-accent/10 text-accent", icon: ArrowUp },
+    { label: "Resolved", value: resolved, color: "bg-green-100 text-green-700", icon: CheckCircle },
+    { label: "Escalated", value: escalated, color: "bg-red-100 text-red-600", icon: AlertTriangle },
+  ];
 
   return (
     <>
@@ -30,12 +50,33 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gray-50 py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
-            <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}>
-              <option value="">All Statuses</option>
-              {STATUSES.map((s) => <option key={s}>{s}</option>)}
-            </select>
+            <div>
+              <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+              <p className="text-gray-400 text-xs mt-0.5">Overview of all campus suggestions</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link to="/admin/reports" className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary transition-colors">
+                <LinkIcon className="w-3 h-3" /> Full Reports
+              </Link>
+              <select className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}>
+                <option value="">All Statuses</option>
+                {STATUSES.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* KPI summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {KPI_CARDS.map(({ label, value, color, icon: Icon }) => (
+              <div key={label} className={`${color} rounded-2xl p-4 text-center`}>
+                <div className="flex justify-center mb-1.5">
+                  <Icon className="w-5 h-5" strokeWidth={2.5} />
+                </div>
+                <p className="text-2xl font-extrabold">{value}</p>
+                <p className="text-xs font-semibold mt-0.5 opacity-80">{label}</p>
+              </div>
+            ))}
           </div>
 
           {/* Mobile cards view */}
@@ -61,7 +102,7 @@ export default function Dashboard() {
                     </p>
                     <p className="text-xs text-gray-400">{timeAgo(post.createdAt)}</p>
                   </div>
-                  {post.isEscalated && <span className="ml-auto w-2 h-2 rounded-full bg-red-500" title="Escalated" />}
+                  {post.isEscalated && post.status === "pending" && <span className="ml-auto w-2 h-2 rounded-full bg-red-500" title="Escalated" />}
                 </div>
                 <h3 className="font-semibold text-gray-800 mb-1">{post.title}</h3>
                 <p className="text-xs text-gray-500 mb-3 line-clamp-2">{post.body}</p>
@@ -120,7 +161,7 @@ export default function Dashboard() {
                     </td>
                     <td className="px-4 py-3 font-medium max-w-xs">
                       <div className="flex items-center gap-2">
-                        {post.isEscalated && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="Escalated" />}
+                        {post.isEscalated && post.status === "pending" && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="Escalated" />}
                         {post.flagged && <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" title="Flagged by moderation" />}
                         <span className="line-clamp-1">{post.title}</span>
                       </div>

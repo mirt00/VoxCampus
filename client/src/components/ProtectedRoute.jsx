@@ -18,9 +18,8 @@ export default function ProtectedRoute({ children, roles }) {
   );
 
   if (!user) {
-    // Admin routes → admin login, public routes → user login
     const isAdminRoute = location.pathname.startsWith("/admin");
-    return <Navigate to={isAdminRoute ? "/admin/login" : "/"} replace state={{ from: location.pathname }} />;
+    return <Navigate to={isAdminRoute ? "/admin/login" : "/auth"} replace state={{ from: location.pathname }} />;
   }
 
   if (roles && !roles.includes(user.role)) {

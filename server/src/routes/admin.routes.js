@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { getPosts, updateStatus, assignAdmin, saveNote, saveFeedback, getEscalationLog, getAdmins, createAdmin, deactivateAdmin } = require("../controllers/admin.controller");
+const { getPosts, updateStatus, assignAdmin, saveNote, saveFeedback, getEscalationLog, getAdmins, createAdmin, deactivateAdmin, getEngagementData } = require("../controllers/admin.controller");
 const verifyJWT = require("../middleware/auth.middleware");
 const roleGuard = require("../middleware/role.middleware");
 
@@ -12,6 +12,7 @@ router.patch("/posts/:id/note", saveNote);
 router.patch("/posts/:id/feedback", saveFeedback);
 router.get("/posts/:id/escalation-log", getEscalationLog);
 
+router.get("/engagement", getEngagementData);
 router.get("/users", roleGuard(["superadmin"]), getAdmins);
 router.post("/users", roleGuard(["superadmin"]), createAdmin);
 router.patch("/users/:id/deactivate", roleGuard(["superadmin"]), deactivateAdmin);

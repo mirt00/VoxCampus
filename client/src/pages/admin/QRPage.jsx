@@ -1,8 +1,16 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import AdminNavbar from "../../components/AdminNavbar";
 import QRCodeDisplay from "../../components/QRCodeDisplay";
+import api from "../../api/axiosInstance";
 
 export default function QRPage() {
+  const [baseUrl, setBaseUrl] = useState("");
+
+  useEffect(() => {
+    api.get("/qr/url").then((r) => setBaseUrl(r.data.url)).catch(() => {});
+  }, []);
+
   return (
     <>
       <AdminNavbar />
@@ -11,11 +19,9 @@ export default function QRPage() {
           <Link to="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
             ← Back to Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-primary mb-2">Campus QR Code</h1>
-          <p className="text-gray-500 text-sm mb-6">
-            Print and place around campus. Scanning opens the suggestion form directly.
-          </p>
-          <QRCodeDisplay />
+          <h1 className="text-2xl font-bold text-primary mb-6">Campus QR Code</h1>
+
+          <QRCodeDisplay url={baseUrl} includeLogo={true} />
         </div>
       </div>
     </>

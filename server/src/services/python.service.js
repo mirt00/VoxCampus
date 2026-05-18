@@ -30,4 +30,9 @@ const checkModeration = async (title, body) => {
   return data;
 };
 
-module.exports = { rankPost, checkDuplicate, checkEscalation, checkModeration };
+const getEngagement = async (users) => {
+  const { data } = await axios.post(`${PYTHON_URL}/engagement`, users, { timeout: 10000 });
+  return data;
+};
+
+module.exports = { rankPost, checkDuplicate, checkEscalation, checkModeration, getEngagement };

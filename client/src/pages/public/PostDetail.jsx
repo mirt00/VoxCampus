@@ -63,7 +63,7 @@ export default function PostDetail() {
       await deletePost(id);
       qc.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post deleted");
-      navigate("/");
+      navigate("/feed");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete");
     }
@@ -74,7 +74,7 @@ export default function PostDetail() {
       <Navbar />
       <div className="min-h-screen bg-gray-50 py-6 px-4">
         <div className="max-w-2xl mx-auto">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
+          <Link to="/feed" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
             ← Back to Feed
           </Link>
 
@@ -105,7 +105,7 @@ export default function PostDetail() {
                     </span>
                   )}
                   <StatusBadge status={post.status} />
-                  {post.isEscalated && (
+                  {post.isEscalated && post.status === "pending" && (
                     <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-medium">Escalated</span>
                   )}
                 </div>

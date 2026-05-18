@@ -109,7 +109,7 @@ export default function SubmitPost() {
                 className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform">
                 + Post Another Suggestion
               </button>
-              <button onClick={() => navigate("/")}
+              <button onClick={() => navigate("/feed")}
                 className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl text-sm hover:bg-gray-50">
                 View Feed
               </button>
@@ -118,7 +118,7 @@ export default function SubmitPost() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-gray-700">Recent Suggestions</h3>
-              <button onClick={() => navigate("/")} className="text-xs text-primary hover:underline">View all →</button>
+              <button onClick={() => navigate("/feed")} className="text-xs text-primary hover:underline">View all →</button>
             </div>
             <div className="space-y-3">
               {recentPosts.slice(0, 3).map((post) => <PostCard key={post._id} post={post} />)}
@@ -328,7 +328,7 @@ export default function SubmitPost() {
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-700">Recent Suggestions</h3>
-            <Link to="/" className="text-xs text-primary hover:underline">View all →</Link>
+            <Link to="/feed" className="text-xs text-primary hover:underline">View all →</Link>
           </div>
           <div className="space-y-3">
             {recentPosts.slice(0, 3).map((post) => <PostCard key={post._id} post={post} />)}

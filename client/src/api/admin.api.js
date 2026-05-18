@@ -9,3 +9,4 @@ export const getEscalationLog = (id) => api.get(`/admin/posts/${id}/escalation-l
 export const getAdmins = () => api.get("/admin/users");
 export const createAdmin = (data) => api.post("/admin/users", data);
 export const deactivateAdmin = (id) => api.patch(`/admin/users/${id}/deactivate`);
+export const getEngagement = () => api.get("/admin/engagement");

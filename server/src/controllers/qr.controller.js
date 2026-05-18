@@ -3,9 +3,8 @@ const getQRUrl = (req, res) => {
     .trim()
     .replace(/\n/g, "")
     .replace(/\r/g, "")
-    .replace(/\/$/, ""); // remove trailing slash
-  const url = `${base}/submit`;
-  res.json({ url });
+    .replace(/\/$/, "");
+  res.json({ url: base });
 };
 
 module.exports = { getQRUrl };
