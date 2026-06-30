@@ -2,8 +2,17 @@ const Post = require("../models/Post.model");
 const User = require("../models/User.model");
 const Vote = require("../models/Vote.model");
 const EscalationLog = require("../models/EscalationLog.model");
+const Notification = require("../models/Notification.model");
 const bcrypt = require("bcryptjs");
 const { getEngagement } = require("../services/python.service");
+const { getIO } = require("../utils/socket");
+
+const STATUS_MESSAGES = {
+  "in-progress": "Your suggestion is now being reviewed by the admin.",
+  "resolved": "Great news! Your suggestion has been resolved.",
+  "rejected": "Your suggestion has been reviewed and could not be actioned at this time.",
+  "pending": "Your suggestion status has been updated to pending.",
+};
 
 const getPosts = async (req, res, next) => {
   try {
@@ -29,6 +38,25 @@ const updateStatus = async (req, res, next) => {
     const { status } = req.body;
     const post = await Post.findByIdAndUpdate(req.params.id, { status }, { new: true });
     if (!post) return res.status(404).json({ message: "Post not found" });
+
+    // Notify the registered post author about the status change
+    if (post.author?.type === "registered" && post.author?.userId) {
+      try {
+        const notification = await Notification.create({
+          post: post._id,
+          postTitle: post.title,
+          message: STATUS_MESSAGES[status] || "Your suggestion status has been updated.",
+          authorName: post.author.displayName || "User",
+          recipientType: "user",
+          recipient: post.author.userId,
+          newStatus: status,
+        });
+        getIO().to(`user-${post.author.userId}`).emit("new-notification", notification);
+      } catch (err) {
+        console.warn("[Notification] Failed to notify user:", err.message);
+      }
+    }
+
     res.json(post);
   } catch (err) { next(err); }
 };

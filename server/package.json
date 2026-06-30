@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-  "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "seed:categories": "node seeds/categories.seed.js",
-    "seed:admin": "node seeds/createAdmin.js"
-  },
+    "scripts": {
+      "dev": "nodemon server.js",
+      "start": "node server.js",
+      "seed:categories": "node seeds/categories.seed.js",
+      "seed:admin": "node seeds/createAdmin.js"
+    },
     "seed:admin": "node seeds/createAdmin.js"
   },
   "dependencies": {
@@ -29,7 +29,8 @@
     "multer": "^2.1.1",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.13",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

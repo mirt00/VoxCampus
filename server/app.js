@@ -12,6 +12,7 @@ const adminRoutes = require("./src/routes/admin.routes");
 const qrRoutes = require("./src/routes/qr.routes");
 const categoryRoutes = require("./src/routes/category.routes");
 const uploadRoutes = require("./src/routes/upload.routes");
+const notificationRoutes = require("./src/routes/notification.routes");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 

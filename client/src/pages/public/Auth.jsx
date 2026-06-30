@@ -92,7 +92,7 @@ export default function Auth() {
       const { data: res } = await registerApi(data);
       setUser(res.user);
       toast.success("Welcome to VoxCampus!");
-      navigate("/feed");
+      navigate(from, { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {

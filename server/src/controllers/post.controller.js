@@ -1,8 +1,10 @@
 const Post = require("../models/Post.model");
 const Category = require("../models/Category.model");
 const User = require("../models/User.model");
+const Notification = require("../models/Notification.model");
 const { checkDuplicate, rankPost, checkModeration } = require("../services/python.service");
 const hashIP = require("../utils/hashIP");
+const { getIO } = require("../utils/socket");
 
 const createPost = async (req, res, next) => {
   try {
@@ -206,6 +208,20 @@ const createPost = async (req, res, next) => {
       toxicityScore,
       moderationReason,
     });
+
+    // Create notification and emit to all connected admins
+    try {
+      const notification = await Notification.create({
+        post: post._id,
+        postTitle: trimmedTitle,
+        authorName: displayName,
+        message: `New suggestion submitted by ${displayName}`,
+      });
+      getIO().to("admin-room").emit("new-notification", notification);
+    } catch (err) {
+      console.warn("[Notification] Failed to create/emit notification:", err.message);
+    }
+
     res.status(201).json(post);
   } catch (err) { next(err); }
 };

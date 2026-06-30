@@ -18,20 +18,20 @@ export default function PostCard({ post }) {
     : { name: post.author?.displayName || "User", avatar: post.author?.avatar || null };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 
-                    hover:shadow-lg hover:-translate-y-0.5 
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6
+                    hover:shadow-lg hover:-translate-y-0.5
                     transition-all duration-300 ease-out
                     group">
 
       {/* Row 1 — Author + three dot */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between mb-3.5">
+        <div className="flex items-center gap-3">
           {isAnon ? (
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 shadow-sm ${isMyAnonPost ? "bg-primary/20" : "bg-gradient-to-br from-gray-200 to-gray-300"}`}>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 shadow-sm ${isMyAnonPost ? "bg-primary/20" : "bg-gradient-to-br from-gray-200 to-gray-300"}`}>
               👤
             </div>
           ) : (
-            <Avatar user={displayUser} size="md" />
+            <Avatar user={displayUser} size="lg" />
           )}
           <div>
             <p className="text-sm font-bold text-gray-800 leading-tight">
@@ -51,7 +51,7 @@ export default function PostCard({ post }) {
       </div>
 
       {/* Row 2 — Badges */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-3">
+      <div className="flex items-center gap-2 flex-wrap mb-3.5">
         {post.category?.name && (
           <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">
             {post.category.name}
@@ -66,12 +66,12 @@ export default function PostCard({ post }) {
       </div>
 
       {/* Row 3 — Title + body */}
-      <Link to={`/post/${post._id}`} className="block mb-3">
-        <h3 className="font-extrabold text-gray-900 text-base leading-snug mb-1.5 
+      <Link to={`/post/${post._id}`} className="block mb-4">
+        <h3 className="font-extrabold text-gray-900 text-lg leading-snug mb-2
                        group-hover:text-primary transition-colors duration-200 line-clamp-2">
           {post.title}
         </h3>
-        <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+        <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed">
           {post.body}
         </p>
       </Link>
@@ -120,7 +120,7 @@ export default function PostCard({ post }) {
       )}
 
       {/* Row 5 — Vote + View */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <VoteButton postId={post._id} voteCount={post.voteCount} />
         <Link to={`/post/${post._id}`}
           className="text-xs font-semibold text-gray-400 hover:text-primary transition-colors duration-200 flex items-center gap-1">
