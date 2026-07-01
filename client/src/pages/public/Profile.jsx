@@ -74,7 +74,7 @@ export default function Profile() {
       <Navbar />
       <div className="min-h-screen bg-gray-50 py-6 px-4">
         <div className="max-w-lg mx-auto">
-          <Link to="/" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
+          <Link to="/feed" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
             ← Back to Feed
           </Link>
 
