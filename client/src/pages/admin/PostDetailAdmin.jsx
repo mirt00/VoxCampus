@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEscalationLog, saveAdminNote, updatePostStatus, saveAdminFeedback } from "../../api/admin.api";
 import { getPostById } from "../../api/posts.api";
+import api from "../../api/axiosInstance";
 import AdminNavbar from "../../components/AdminNavbar";
 import StatusBadge from "../../components/StatusBadge";
 import { timeAgo } from "../../utils/timeAgo";
@@ -15,17 +16,28 @@ export default function PostDetailAdmin() {
   const qc = useQueryClient();
   const [note, setNote] = useState("");
   const [feedback, setFeedback] = useState("");
+  const feedbackRef = useRef(null);
+  const [feedbackImages, setFeedbackImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const initialLoadDone = useRef(false);
 
   const { data: post } = useQuery({ queryKey: ["post", id], queryFn: () => getPostById(id).then((r) => r.data) });
   const { data: logs = [] } = useQuery({ queryKey: ["escalationLog", id], queryFn: () => getEscalationLog(id).then((r) => r.data) });
+
+  useEffect(() => {
+    if (post?.adminFeedbackImages && !initialLoadDone.current) {
+      setFeedbackImages(post.adminFeedbackImages);
+      initialLoadDone.current = true;
+    }
+  }, [post?.adminFeedbackImages]);
 
   const { mutate: submitNote } = useMutation({
     mutationFn: () => saveAdminNote(id, note),
     onSuccess: () => { toast.success("Note saved"); qc.invalidateQueries({ queryKey: ["post", id] }); },
   });
 
-  const { mutate: submitFeedback } = useMutation({
-    mutationFn: () => saveAdminFeedback(id, feedback),
+  const { mutateAsync: submitFeedback } = useMutation({
+    mutationFn: ({ fbText, fbImages }) => saveAdminFeedback(id, fbText, fbImages),
     onSuccess: () => { toast.success("Feedback published"); qc.invalidateQueries({ queryKey: ["post", id] }); },
   });
 
@@ -33,6 +45,33 @@ export default function PostDetailAdmin() {
     mutationFn: (status) => updatePostStatus(id, status),
     onSuccess: () => { toast.success("Status updated"); qc.invalidateQueries({ queryKey: ["post", id] }); },
   });
+
+  const handleFeedbackImageUpload = async (e) => {
+    const files = Array.from(e.target.files).slice(0, 5 - feedbackImages.length);
+    if (!files.length) return;
+    setUploadingImages(true);
+    const uploaded = [];
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append("image", file);
+        const { data } = await api.post("/upload/post-image", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        uploaded.push(data.url);
+      } catch {
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    }
+    setFeedbackImages((prev) => [...prev, ...uploaded].slice(0, 5));
+    setUploadingImages(false);
+  };
+
+  const handlePublishFeedback = () => {
+    const fbText = feedbackRef.current?.value || "";
+    submitFeedback({ fbText, fbImages: feedbackImages });
+    setFeedbackImages([]);
+  };
 
   if (!post) return <><AdminNavbar /><p className="text-center py-20 text-gray-400">Loading...</p></>;
 
@@ -50,7 +89,6 @@ export default function PostDetailAdmin() {
 
           {/* Post card */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            {/* Author info */}
             <div className="flex items-center gap-3 mb-4 pb-4 border-b">
               {isAnon ? (
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-2xl">👤</div>
@@ -71,7 +109,6 @@ export default function PostDetailAdmin() {
                     🔒 Identity hidden from public
                   </span>
                 )}
-                {/* Admin sees real identity of anonymous poster */}
                 {isAnon && post.author?.realIdentity && (
                   <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                     <p className="text-xs font-bold text-amber-700 mb-1">🔍 Real Identity (Admin Only)</p>
@@ -94,7 +131,6 @@ export default function PostDetailAdmin() {
                   </div>
                 )}
               </div>
-              {/* Status changer */}
               <select value={post.status}
                 onChange={(e) => changeStatus(e.target.value)}
                 className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
@@ -102,7 +138,6 @@ export default function PostDetailAdmin() {
               </select>
             </div>
 
-            {/* Badges */}
             <div className="flex gap-2 flex-wrap mb-3">
               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{post.category?.name}</span>
               <StatusBadge status={post.status} />
@@ -113,7 +148,6 @@ export default function PostDetailAdmin() {
             <h1 className="text-xl font-bold text-gray-800 mb-2">{post.title}</h1>
             <p className="text-gray-600 whitespace-pre-wrap text-sm">{post.body}</p>
 
-            {/* Attachments */}
             {post.attachments?.length > 0 && (
               <div className="flex gap-2 mt-4 flex-wrap">
                 {post.attachments.map((src, i) => (
@@ -132,18 +166,57 @@ export default function PostDetailAdmin() {
               <h2 className="font-semibold text-gray-700">Public Admin Response</h2>
               <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Visible to all users</span>
             </div>
+
             {post.adminFeedback && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3 text-sm text-gray-700">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-3">
                 <p className="font-medium text-primary text-xs mb-1">Current response:</p>
-                {post.adminFeedback}
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{post.adminFeedback}</p>
+                {post.adminFeedbackImages?.length > 0 && (
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {post.adminFeedbackImages.map((src, i) => (
+                      <a key={i} href={src} target="_blank" rel="noreferrer">
+                        <img src={src} alt="" className="w-20 h-20 object-cover rounded-lg border hover:opacity-80 transition-opacity" />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-            <textarea rows={3} placeholder="Write a public response to this suggestion... (visible to all users)"
+
+            <textarea ref={feedbackRef} rows={3} placeholder="Write a public response to this suggestion... (visible to all users)"
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-              defaultValue={post.adminFeedback} onChange={(e) => setFeedback(e.target.value)}
+              defaultValue={post.adminFeedback}
             />
-            <button onClick={() => submitFeedback()}
-              className="mt-2 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-light font-medium">
+
+            <div className="mt-2">
+              <label className={`inline-flex items-center gap-2 border-2 border-dashed rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors ${
+                uploadingImages ? "border-primary bg-primary/5 cursor-wait" : feedbackImages.length >= 5 ? "border-gray-100 bg-gray-50 cursor-not-allowed opacity-50" : "border-gray-200 hover:border-primary"
+              }`}>
+                <span>{uploadingImages ? "⏳" : "📷"}</span>
+                <span className="text-gray-400 text-xs">
+                  {uploadingImages ? "Uploading..." : feedbackImages.length >= 5 ? "Max 5 images" : "Add images"}
+                </span>
+                <input type="file" accept="image/*" multiple className="hidden"
+                  onChange={handleFeedbackImageUpload} disabled={uploadingImages || feedbackImages.length >= 5} />
+              </label>
+            </div>
+
+            {feedbackImages.length > 0 && (
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {feedbackImages.map((src, i) => (
+                  <div key={i} className="relative group">
+                    <img src={src} alt="" className="w-20 h-20 object-cover rounded-lg border" />
+                    <button type="button" onClick={() => setFeedbackImages(feedbackImages.filter((_, j) => j !== i))}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button onClick={handlePublishFeedback}
+              className="mt-3 bg-primary text-white px-4 py-1.5 rounded-lg text-sm hover:bg-primary-light font-medium">
               Publish Response
             </button>
           </div>
@@ -165,7 +238,6 @@ export default function PostDetailAdmin() {
             </button>
           </div>
 
-          {/* Escalation history */}
           {logs.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="font-semibold text-gray-700 mb-3">Escalation History</h2>

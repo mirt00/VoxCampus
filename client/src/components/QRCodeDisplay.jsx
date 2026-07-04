@@ -1,55 +1,149 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import toast from "react-hot-toast";
 
-const LOGO = "/onlylogo.png";
+const LOGO_PATH = "/onlylogo.png";
 
 export default function QRCodeDisplay({ url, fgColor = "#1e3a5f", bgColor = "#ffffff", includeLogo = true }) {
-  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const [logoSrc, setLogoSrc] = useState(includeLogo ? LOGO_PATH : null);
+
+  useEffect(() => {
+    if (!includeLogo) return;
+    fetch(LOGO_PATH)
+      .then((r) => r.blob())
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => setLogoSrc(reader.result);
+        reader.readAsDataURL(blob);
+      })
+      .catch(() => {});
+  }, [includeLogo]);
+
+  const getCanvas = useCallback(() => {
+    if (!containerRef.current) return null;
+    return containerRef.current.querySelector("canvas");
+  }, []);
+
+  const getCanvasDataUrl = useCallback(() => {
+    const canvas = getCanvas();
+    if (!canvas) return null;
+    try {
+      return canvas.toDataURL("image/png");
+    } catch {
+      toast.error("Could not read QR code. Try reloading.");
+      return null;
+    }
+  }, [getCanvas]);
+
+  const SCALE = 3;
+
+  const getHighResDataUrl = useCallback(() => {
+    const canvas = getCanvas();
+    if (!canvas) return null;
+    try {
+      const big = document.createElement("canvas");
+      big.width = canvas.width * SCALE;
+      big.height = canvas.height * SCALE;
+      const ctx = big.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(canvas, 0, 0, big.width, big.height);
+      return big.toDataURL("image/png");
+    } catch {
+      return getCanvasDataUrl();
+    }
+  }, [getCanvas, getCanvasDataUrl]);
 
   const downloadPNG = useCallback(() => {
-    const canvas = canvasRef.current;
+    const canvas = getCanvas();
     if (!canvas) return;
 
-    const padding = 30;
-    const logoSize = 60;
+    const scale = 3;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const padding = 30 * scale;
     const canvasOut = document.createElement("canvas");
-    canvasOut.width = canvas.width + padding * 2;
-    canvasOut.height = canvas.height + padding * 2 + 40;
+    canvasOut.width = cw * scale + padding * 2;
+    canvasOut.height = ch * scale + padding * 2 + 40 * scale;
 
     const ctx = canvasOut.getContext("2d");
-
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvasOut.width, canvasOut.height);
-
-    ctx.drawImage(canvas, padding, padding + 20);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(canvas, 0, 0, cw * scale, ch * scale, padding, padding + 20 * scale, cw * scale, ch * scale);
 
     ctx.fillStyle = fgColor;
-    ctx.font = "bold 14px Arial";
+    ctx.font = `bold ${14 * scale}px Arial`;
     ctx.textAlign = "center";
-    ctx.fillText("Scan to submit a suggestion", canvasOut.width / 2, 18);
+    ctx.fillText("Scan to submit a suggestion", canvasOut.width / 2, 18 * scale);
 
-    const link = document.createElement("a");
-    link.download = "voxcampus-qr.png";
-    link.href = canvasOut.toDataURL("image/png");
-    link.click();
-    toast.success("QR code downloaded");
-  }, [fgColor, bgColor]);
+    try {
+      const link = document.createElement("a");
+      link.download = "voxcampus-qr.png";
+      link.href = canvasOut.toDataURL("image/png");
+      link.click();
+      toast.success("QR code downloaded");
+    } catch {
+      toast.error("Download failed. Try using Print instead.");
+    }
+  }, [fgColor, bgColor, getCanvas]);
+
+  const openPrintWindow = useCallback(() => {
+    const dataUrl = getHighResDataUrl();
+    if (!dataUrl) return;
+    const win = window.open("", "_blank", "width=800,height=1100");
+    if (!win) return;
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Print QR Code</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            display: flex; align-items: center; justify-content: center;
+            background: #e5e7eb; min-height: 100vh; padding: 24px;
+          }
+          .paper {
+            width: 210mm; min-height: 297mm; background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 40px;
+          }
+          img { width: 70%; max-width: 500px; height: auto; }
+          @media print {
+            body { background: none; padding: 0; }
+            .paper { box-shadow: none; width: 100%; min-height: 100vh; padding: 20px; }
+            img { width: 60%; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="paper">
+          <img src="${dataUrl}" alt="QR Code" />
+        </div>
+        <script>
+          window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 500); };
+        <\/script>
+      </body>
+      </html>
+    `);
+    win.document.close();
+  }, [getHighResDataUrl]);
 
   if (!url) return <p className="text-gray-400">Loading QR code...</p>;
 
   return (
     <div className="text-center">
-      <div className="inline-block p-4 bg-white border rounded-xl shadow-sm print:shadow-none relative">
+      <div ref={containerRef} className="inline-block p-4 bg-white border rounded-xl shadow-sm print:shadow-none relative">
         <QRCodeCanvas
-          ref={canvasRef}
           value={url}
           size={280}
           fgColor={fgColor}
           bgColor={bgColor}
           imageSettings={
-            includeLogo
-              ? { src: LOGO, x: undefined, y: undefined, height: 56, width: 56, excavate: true }
+            includeLogo && logoSrc
+              ? { src: logoSrc, x: undefined, y: undefined, height: 56, width: 56, excavate: true }
               : undefined
           }
           level="H"
@@ -67,7 +161,7 @@ export default function QRCodeDisplay({ url, fgColor = "#1e3a5f", bgColor = "#ff
           Download PNG
         </button>
         <button
-          onClick={() => window.print()}
+          onClick={openPrintWindow}
           className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors flex items-center gap-1.5"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

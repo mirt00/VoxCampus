@@ -14,11 +14,11 @@ export default function QRPage() {
   return (
     <>
       <AdminNavbar />
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-10 px-4">
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-10 px-4">
+        <Link to="/admin/dashboard" className="self-start mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors ml-4">
+          ← Back to Dashboard
+        </Link>
         <div className="bg-white rounded-xl shadow-md p-8 text-center max-w-sm w-full">
-          <Link to="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
-            ← Back to Dashboard
-          </Link>
           <h1 className="text-2xl font-bold text-primary mb-6">Campus QR Code</h1>
 
           <QRCodeDisplay url={baseUrl} includeLogo={true} />

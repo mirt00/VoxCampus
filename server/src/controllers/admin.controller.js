@@ -79,8 +79,14 @@ const saveNote = async (req, res, next) => {
 
 const saveFeedback = async (req, res, next) => {
   try {
-    const { feedback } = req.body;
-    const post = await Post.findByIdAndUpdate(req.params.id, { adminFeedback: feedback }, { new: true });
+    const { feedback, feedbackImages } = req.body;
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+    post.adminFeedback = feedback;
+    if (Array.isArray(feedbackImages)) {
+      post.adminFeedbackImages = feedbackImages;
+    }
+    await post.save();
     res.json(post);
   } catch (err) { next(err); }
 };

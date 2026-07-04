@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { usePost } from "../../hooks/usePosts";
-import { updatePost } from "../../api/posts.api";
+import { updatePost, deletePost } from "../../api/posts.api";
 import { useQueryClient } from "@tanstack/react-query";
 import StatusBadge from "../../components/StatusBadge";
 import VoteButton from "../../components/VoteButton";
@@ -188,7 +188,7 @@ export default function PostDetail() {
                 </div>
 
                 {/* Admin public response */}
-                {post.adminFeedback && (
+                {(post.adminFeedback || post.adminFeedbackImages?.length > 0) && (
                   <div className="mt-4 bg-primary/5 border border-primary/20 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -199,7 +199,18 @@ export default function PostDetail() {
                         <p className="text-xs text-gray-400">Official Response</p>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-700 leading-relaxed">{post.adminFeedback}</p>
+                    {post.adminFeedback && (
+                      <p className="text-sm text-gray-700 leading-relaxed">{post.adminFeedback}</p>
+                    )}
+                    {post.adminFeedbackImages?.length > 0 && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {post.adminFeedbackImages.map((src, i) => (
+                          <a key={i} href={src} target="_blank" rel="noreferrer">
+                            <img src={src} alt="" className="w-24 h-24 object-cover rounded-lg border hover:opacity-80 transition-opacity" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </>

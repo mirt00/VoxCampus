@@ -34,6 +34,7 @@ const postSchema = new mongoose.Schema(
     toxicityScore: { type: Number, default: 0.0 },
     moderationReason: { type: String, default: null },
     attachments: [String], // base64 images or URLs
+    adminFeedbackImages: [String],
   },
   { timestamps: true }
 );

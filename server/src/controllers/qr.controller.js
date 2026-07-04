@@ -4,7 +4,7 @@ const getQRUrl = (req, res) => {
     .replace(/\n/g, "")
     .replace(/\r/g, "")
     .replace(/\/$/, "");
-  res.json({ url: `${base}/submit` });
+  res.json({ url: `${base}/` });
 };
 
 module.exports = { getQRUrl };

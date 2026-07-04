@@ -31,72 +31,89 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-lg">V</div>
-          <div>
-            <p className="font-extrabold text-gray-800">VoxCampus</p>
-            <p className="text-xs text-gray-400">Admin Portal</p>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-primary-dark to-gray-950" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/30 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse delay-700" />
+
+      {/* Grid overlay */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+        backgroundSize: "40px 40px",
+      }} />
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* College logo circle */}
+        <div className="flex justify-center mb-6">
+          <div className="w-20 h-20 rounded-full bg-white shadow-lg border-2 border-white/80 flex items-center justify-center overflow-hidden">
+            <img
+              src="/onlylogo.png"
+              alt="College Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
 
-        <h1 className="text-2xl font-extrabold text-gray-900 mb-1">Welcome back</h1>
-        <p className="text-gray-400 text-sm mb-7">Sign in to your admin account.</p>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-            <input type="email" placeholder="admin@campus.edu"
-              className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.email ? "border-red-400 focus:ring-red-200 bg-red-50" : "border-gray-200 focus:ring-primary/30 focus:border-primary"
-              }`}
-              {...register("email", { required: "Email is required" })}
-            />
-            {errors.email && <p className="mt-1 text-xs text-red-500">⚠ {errors.email.message}</p>}
+        {/* Glassmorphism card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-extrabold text-white mb-1">VoxCampus</h1>
+            <p className="text-sm text-blue-200/60">Admin Portal</p>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="text-sm font-semibold text-gray-700">Password</label>
-              <Link to="/admin/forgot-password" className="text-xs text-primary hover:underline font-medium">
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative">
-              <input type={showPass ? "text" : "password"} placeholder="Your password"
-                className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all pr-11 ${
-                  errors.password ? "border-red-400 focus:ring-red-200 bg-red-50" : "border-gray-200 focus:ring-primary/30 focus:border-primary"
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-1.5">Email</label>
+              <input type="email" placeholder="admin@campus.edu"
+                className={`w-full bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${
+                  errors.email ? "border-red-400 focus:ring-red-200 bg-red-500/10" : "focus:ring-primary/30 focus:border-primary/50"
                 }`}
-                {...register("password", { required: "Password is required" })}
+                {...register("email", { required: "Email is required" })}
               />
-              <button type="button" onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <EyeIcon open={showPass} />
-              </button>
+              {errors.email && <p className="mt-1 text-xs text-red-400">⚠ {errors.email.message}</p>}
             </div>
-            {errors.password && <p className="mt-1 text-xs text-red-500">⚠ {errors.password.message}</p>}
-          </div>
 
-          <button type="submit" disabled={isSubmitting}
-            className="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm hover:bg-primary-light transition-all disabled:opacity-60 active:scale-[0.98] shadow-sm shadow-primary/30 mt-2">
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                Signing in...
-              </span>
-            ) : "Sign In"}
-          </button>
-        </form>
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="text-sm font-semibold text-gray-300">Password</label>
+                <Link to="/admin/forgot-password" className="text-xs text-blue-300 hover:underline font-medium">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <input type={showPass ? "text" : "password"} placeholder="Your password"
+                  className={`w-full bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all pr-11 ${
+                    errors.password ? "border-red-400 focus:ring-red-200 bg-red-500/10" : "focus:ring-primary/30 focus:border-primary/50"
+                  }`}
+                  {...register("password", { required: "Password is required" })}
+                />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200">
+                  <EyeIcon open={showPass} />
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-400">⚠ {errors.password.message}</p>}
+            </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Not an admin?{" "}
-          
-        </p>
+            <button type="submit" disabled={isSubmitting}
+              className="w-full bg-accent text-gray-950 py-3 rounded-xl font-bold text-sm hover:bg-yellow-500 transition-all disabled:opacity-60 active:scale-[0.98] shadow-lg shadow-accent/25 mt-2">
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Signing in...
+                </span>
+              ) : "Sign In"}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-gray-500 mt-6">
+            Not an admin?{" "}
+          </p>
+        </div>
       </div>
     </div>
   );
